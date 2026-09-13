@@ -52,7 +52,7 @@ In the Vercel project settings:
 | `DOC_SALT` | `openssl rand -hex 16`. Namespaces documents and photo paths. |
 | `REFRESH_SECRET` | `openssl rand -base64 32`. Bearer token for the daily refresh job. |
 | `ANTHROPIC_API_KEY` | Poster reading. |
-| `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-4-5`. |
+| `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5`. |
 
 Plus two Storage integrations (Vercel dashboard, Storage tab):
 

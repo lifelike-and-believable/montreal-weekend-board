@@ -17,6 +17,6 @@ export default function handler(req, res) {
       redis: has("KV_REST_API_URL") || has("UPSTASH_REDIS_REST_URL"),
       blob: has("BLOB_READ_WRITE_TOKEN")
     },
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-4-5"
+    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5"
   });
 }
