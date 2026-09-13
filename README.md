@@ -28,6 +28,8 @@ verified, not approximate. All the porting happens around them:
     api/db.js                  document read/write
     api/upload.js              poster photo upload
     api/read-poster.js         Anthropic vision proxy (holds the API key)
+    api/blob.js                serves /_blob/<photoId>, the artifact-era
+                               asset path the board still builds
     api/login.js api/session.js
     api/health.js              config presence check, booleans only
     lib/auth.js                signed cookie, one-year expiry
