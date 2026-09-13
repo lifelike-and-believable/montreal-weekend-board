@@ -1342,7 +1342,7 @@ function spottedAsEvent(rec, dayKey){
     dur: rec.dur || 120,
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
     url: rec.url || "", note: rec.note || "",
-    free: !!rec.free, price: rec.free ? null : (rec.price || "From a poster"),
+    free: !!rec.free, price: rec.free ? null : (rec.price || null),
     spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
 }
@@ -1352,7 +1352,7 @@ function spottedAsStanding(rec){
     id: "spot-" + rec.id, cat: rec.cat, title: rec.title, url: rec.url || "",
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
     when: prettyDate(from) + (to && to !== from ? " – " + prettyDate(to) : ""),
-    free: !!rec.free, price: rec.free ? null : (rec.price || "From a poster"),
+    free: !!rec.free, price: rec.free ? null : (rec.price || null),
     note: rec.note || "", spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
 }
@@ -1538,6 +1538,7 @@ function cardHtml(item, prefix){
       ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
       : '<button class="pickbtn" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '">' + (on ? 'On the plan' : 'Add') + '</button>') +
     '<span class="card-foot-r">' +
+      (off || !item.recId ? '' : '<button class="editbtn" data-editrec="' + esc(item.recId) + '" style="margin-right:4px">Edit</button>') +
       (off ? '' : '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Hide this" aria-label="Hide ' + esc(item.title) + '">✕</button>') +
     '</span></div>' +
     '</article>';
