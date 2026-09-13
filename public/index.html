@@ -770,6 +770,11 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
 <!-- Reimplements db / assets / sample against this app's own API.
      Must load before the board script. -->
 <script src="/claude-shim.js"></script>
+
+<!-- This weekend's listings, written by the daily refresh. Must load
+     before the board script. Every failure path returns a comment, so
+     the board falls back to the inline blocks it shipped with. -->
+<script src="/board-data.js"></script>
 <script>
 (function(){
 "use strict";
@@ -1092,6 +1097,18 @@ var AFIELD = [
     when:"Sat 12 & Sun 13 Sep", free:true, trip:"Half day",
     note:"First edition: secondhand booksellers set out along the village's main street, at the trailhead of the P'tit Train du Nord. Times aren't published — the village calendar is the place to check." }
 ];
+
+/* The daily refresh writes these four blocks to the store; /board-data.js
+   delivers them as window.__BOARD_DATA__ before this script runs. The
+   blocks above are the fallback when the refresh has not run, the viewer
+   is signed out, or the store is unreachable. */
+if (window.__BOARD_DATA__) {
+  var BD = window.__BOARD_DATA__;
+  if (BD.WEEKEND && BD.WEEKEND.id)   WEEKEND  = BD.WEEKEND;
+  if (Array.isArray(BD.STANDING))    STANDING = BD.STANDING;
+  if (Array.isArray(BD.EVENTS))      EVENTS   = BD.EVENTS;
+  if (Array.isArray(BD.AFIELD))      AFIELD   = BD.AFIELD;
+}
 
 /* ============================================================
    Bands: how a day actually divides when you're planning one.

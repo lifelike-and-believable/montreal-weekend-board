@@ -1,9 +1,9 @@
 /* Shell cache. The board's own data comes from /api, which is never
    cached: a stale pick or a stale spotted record would be worse than
    an empty one. The shell is cached so the board opens underground. */
-var VERSION = "wb-1";
+var VERSION = "wb-2";
 var SHELL = [
-  "/", "/claude-shim.js", "/gate.js", "/manifest.webmanifest",
+  "/", "/claude-shim.js", "/gate.js", "/board-data.js", "/manifest.webmanifest",
   "/icons/icon-192.png", "/icons/apple-touch-icon.png"
 ];
 
@@ -32,15 +32,18 @@ self.addEventListener("fetch", function(e){
   var url = new URL(req.url);
   if (url.origin === location.origin && url.pathname.indexOf("/api/") === 0) return;
 
-  // Navigations: network first so a redeploy lands, cache as the fallback.
-  if (req.mode === "navigate") {
+  /* Navigations and the listings script: network first so a redeploy or
+     a morning refresh lands, cache as the fallback. Cache-first would
+     show last weekend on the first open after every refresh. */
+  var isData = url.origin === location.origin && url.pathname === "/board-data.js";
+  if (req.mode === "navigate" || isData) {
     e.respondWith(
       fetch(req).then(function(r){
         var copy = r.clone();
-        caches.open(VERSION).then(function(c){ c.put("/", copy); });
+        caches.open(VERSION).then(function(c){ c.put(isData ? req : "/", copy); });
         return r;
       }).catch(function(){
-        return caches.match("/").then(function(m){
+        return caches.match(isData ? req : "/").then(function(m){
           return m || new Response("Offline and nothing cached yet.",
             { status: 503, headers: { "content-type": "text/plain" } });
         });
