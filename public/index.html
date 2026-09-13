@@ -1,0 +1,2599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Montreal Weekend Board</title>
+<meta name="description" content="Anglophone-friendly weekends in Montreal, with an itinerary builder and poster capture.">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#22302A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Weekend">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/favicon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,400..800&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,300..600;1,6..72,300..400&display=swap">
+<style>
+:root{color-scheme:light dark}
+body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}
+img{max-width:100%}
+[hidden]:not([hidden=until-found i]){display:none!important}
+</style>
+</head>
+<body>
+<style>
+:root{
+  /* limestone + oxidized copper: picked greys, faintly green-biased */
+  --ground:#E7E8E4;
+  --ground-deep:#DCDED8;
+  --surface:#FCFCFB;
+  --surface-2:#F3F4F0;
+  --line:#CDD0C8;
+  --line-soft:#DFE1DA;
+  --ink:#1A201E;
+  --ink-2:#4C5551;
+  --ink-3:#767F79;
+  --accent:#1F6F5C;
+  --accent-2:#155244;
+  --accent-wash:#DCE9E3;
+  --brick:#A6402F;
+  --brick-wash:#F2DED9;
+  --focus:#1F6F5C;
+  --on-accent:#FFFFFF;
+  --panel:#22302A;
+  --panel-ink:#EAEEE8;
+  --panel-soft:#9BB0A6;
+  --panel-line:#3A4A43;
+
+  --c-theatre:#A6402F;
+  --c-film:#2D4A7A;
+  --c-music:#77396A;
+  --c-dance:#1F6F5C;
+  --c-museum:#6B5B3E;
+  --c-fest:#B8631F;
+  --c-market:#4C6B2C;
+
+  --shadow:0 1px 2px rgba(26,32,30,.05), 0 8px 24px -14px rgba(26,32,30,.22);
+  --r:4px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --ground:#121614;
+    --ground-deep:#0D100F;
+    --surface:#1B211E;
+    --surface-2:#222925;
+    --line:#333C37;
+    --line-soft:#2A322D;
+    --ink:#E7EAE5;
+    --ink-2:#A9B2AC;
+    --ink-3:#7F8A84;
+    --accent:#4FC3A1;
+    --accent-2:#7FD8BD;
+    --accent-wash:#17302A;
+    --brick:#E08573;
+    --brick-wash:#33201C;
+    --focus:#4FC3A1;
+    --on-accent:#101413;
+    --panel:#080B0A;
+    --panel-ink:#EAEEE8;
+    --panel-soft:#8A9A92;
+    --panel-line:#2A332E;
+    --c-theatre:#E08573;
+    --c-film:#7FA3DB;
+    --c-music:#C98DBA;
+    --c-dance:#4FC3A1;
+    --c-museum:#C2AC7E;
+    --c-fest:#E5A25F;
+    --c-market:#9DBE6F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -16px rgba(0,0,0,.7);
+  }
+}
+:root[data-theme="dark"]{
+  --ground:#121614;
+  --ground-deep:#0D100F;
+  --surface:#1B211E;
+  --surface-2:#222925;
+  --line:#333C37;
+  --line-soft:#2A322D;
+  --ink:#E7EAE5;
+  --ink-2:#A9B2AC;
+  --ink-3:#7F8A84;
+  --accent:#4FC3A1;
+  --accent-2:#7FD8BD;
+  --accent-wash:#17302A;
+  --brick:#E08573;
+  --brick-wash:#33201C;
+  --focus:#4FC3A1;
+  --on-accent:#101413;
+  --panel:#080B0A;
+  --panel-ink:#EAEEE8;
+  --panel-soft:#8A9A92;
+  --panel-line:#2A332E;
+  --c-theatre:#E08573;
+  --c-film:#7FA3DB;
+  --c-music:#C98DBA;
+  --c-dance:#4FC3A1;
+  --c-museum:#C2AC7E;
+  --c-fest:#E5A25F;
+  --c-market:#9DBE6F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -16px rgba(0,0,0,.7);
+}
+
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--ground);
+  color:var(--ink);
+  font-family:"Newsreader","Iowan Old Style",Georgia,serif;
+  font-size:16px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:0 140px}
+@media (max-width:560px){.wrap{padding-inline:16px}}
+
+h1,h2,h3,.ui{font-family:"Archivo","Helvetica Neue",Arial,sans-serif}
+.ui{font-variation-settings:"wdth" 100}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+
+/* ---------- masthead ---------- */
+header.top{
+  border-bottom:1px solid var(--line);
+  padding-block:30px 20px;
+  display:flex;flex-wrap:wrap;gap:20px;align-items:flex-end;justify-content:space-between;
+}
+.brand h1{
+  margin:0;
+  font-variation-settings:"wdth" 118,"wght" 800;
+  font-size:clamp(30px,6.2vw,54px);
+  line-height:.94;
+  letter-spacing:-.018em;
+  text-transform:uppercase;
+  text-wrap:balance;
+}
+.brand h1 .em{color:var(--accent)}
+.brand .kicker{
+  font-family:"Archivo",sans-serif;
+  font-variation-settings:"wdth" 82,"wght" 600;
+  text-transform:uppercase;letter-spacing:.14em;font-size:11px;
+  color:var(--ink-3);margin:0 0 10px;
+}
+.dateline{
+  margin:10px 0 0;font-size:15px;color:var(--ink-2);max-width:56ch;
+}
+.stamp{
+  text-align:right;font-family:"IBM Plex Mono",monospace;font-size:11px;
+  color:var(--ink-3);line-height:1.7;white-space:nowrap;
+}
+.stamp b{color:var(--ink-2);font-weight:500}
+#sync-line{color:var(--ink-3)}
+.diagbtn{
+  appearance:none;background:none;border:none;padding:0;cursor:pointer;
+  font:inherit;color:inherit;text-decoration:underline;
+}
+#diag-out{
+  margin-top:6px;font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+  color:var(--ink-3);white-space:pre-wrap;text-align:left;line-height:1.6;
+}
+.stamp[data-sync="local"] #sync-line{color:var(--brick)}
+@media (max-width:700px){.stamp{text-align:left;white-space:normal}}
+
+/* ---------- controls ---------- */
+.controls{
+  position:sticky;top:0;z-index:30;
+  background:var(--ground);
+  background:color-mix(in srgb, var(--ground) 90%, transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+  padding-block:10px;
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;
+  margin-inline:-20px;padding-inline:20px;
+}
+@media (max-width:560px){.controls{margin-inline:-16px;padding-inline:16px}}
+/* Phones keep every pill wrapped and visible — never a sideways scroller.
+   Tried nowrap+overflow-x in v12 to reclaim sticky height; it hid pills
+   behind a scroll and was worse. Don't do it again. */
+@media (max-width:700px){
+  .controls{gap:6px}
+  .ctrl-sep{display:none}
+  .ctrl-note{display:none}
+}
+.chip{
+  appearance:none;cursor:pointer;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 88,"wght" 600;
+  font-size:11px;text-transform:uppercase;letter-spacing:.07em;
+  padding:6px 11px 6px 9px;border-radius:999px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink-2);
+  display:inline-flex;align-items:center;gap:7px;
+  transition:background .12s,border-color .12s,color .12s;
+}
+.chip:hover{border-color:var(--ink-3)}
+.chip .dot{width:8px;height:8px;border-radius:50%;background:currentColor;flex:none}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+.chip[data-cat]{color:var(--catc)}
+.chip[data-cat][aria-pressed="true"]{background:var(--catc);border-color:var(--catc);color:var(--on-accent)}
+.ctrl-sep{width:1px;align-self:stretch;background:var(--line);margin-inline:4px}
+.ctrl-note{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-left:auto}
+
+button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
+  outline:2px solid var(--focus);outline-offset:2px;border-radius:3px;
+}
+
+/* ---------- standing strip ---------- */
+.standing{margin-top:26px}
+.sect-label{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  text-transform:uppercase;letter-spacing:.13em;font-size:11px;color:var(--ink-3);
+  display:flex;align-items:center;gap:10px;margin:0 0 12px;
+}
+.sect-label::after{content:"";flex:1;height:1px;background:var(--line)}
+.standing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+.run{position:relative;background:var(--surface);border:1px solid var(--line-soft);border-top:3px solid var(--catc,var(--line));padding:13px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.run .hidebtn{position:absolute;top:7px;right:7px;margin:0}
+.run .rtitle{padding-right:20px}
+.run .rtitle{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25;letter-spacing:-.005em;padding-right:20px}
+.run .rtitle a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line);}
+.run .rtitle a:hover{border-color:currentColor}
+.run .rmeta{font-size:13.5px;color:var(--ink-2);line-height:1.4}
+.run .rfoot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:2px}
+
+/* ---------- highlights ---------- */
+.hl{background:var(--panel);color:var(--panel-ink);margin-top:26px;padding:18px 20px 20px}
+.hl-label{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  text-transform:uppercase;letter-spacing:.15em;font-size:10.5px;color:var(--panel-soft);
+  margin:0 0 14px;display:flex;align-items:center;gap:10px;
+}
+.hl-label::after{content:"";flex:1;height:1px;background:var(--panel-line)}
+.hl-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1px;background:var(--panel-line)}
+.hl-card{background:var(--panel);padding:2px 18px 2px 0;display:flex;flex-direction:column;gap:8px}
+.hl-grid .hl-card + .hl-card{padding-left:18px}
+@media (max-width:720px){
+  .hl-grid{gap:18px;background:none}
+  .hl-grid .hl-card + .hl-card{padding-left:0;border-top:1px solid var(--panel-line);padding-top:16px}
+}
+.hl-cat{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--catc);
+}
+.hl-title{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 108,"wght" 800;
+  font-size:clamp(19px,2.4vw,25px);line-height:1.06;letter-spacing:-.017em;margin:0;text-wrap:balance;
+}
+.hl-title a{color:var(--panel-ink);text-decoration:none;border-bottom:2px solid var(--panel-line)}
+.hl-title a:hover{border-color:var(--accent)}
+.hl-when{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--panel-soft);line-height:1.55}
+.hl-why{font-size:15px;line-height:1.42;color:var(--panel-ink);margin:0;max-width:40ch}
+.hl-card .pickbtn{
+  background:transparent;border-color:var(--panel-line);color:var(--panel-soft);margin-top:auto;
+}
+.hl-card .pickbtn:hover{border-color:var(--accent);color:var(--accent)}
+.hl-card .pickbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+
+/* ---------- poster capture ---------- */
+.chip.action{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.chip.action:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.cap-overlay{
+  position:fixed;inset:0;z-index:80;background:rgba(12,16,14,.55);
+  display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;
+}
+.cap{
+  background:var(--surface);border:1px solid var(--line);width:100%;max-width:560px;
+  box-shadow:0 24px 60px -24px rgba(0,0,0,.5);padding:20px;
+  display:flex;flex-direction:column;gap:14px;
+}
+.cap h2{
+  margin:0;font-variation-settings:"wdth" 112,"wght" 800;font-size:22px;
+  letter-spacing:-.015em;text-transform:uppercase;line-height:1;
+}
+.cap .lede{margin:0;font-size:14.5px;color:var(--ink-2);max-width:52ch}
+.cap-drop{
+  border:1.5px dashed var(--line);padding:22px 16px;text-align:center;
+  display:flex;flex-direction:column;gap:10px;align-items:center;
+}
+.cap-drop.busy{border-style:solid;background:var(--surface-2)}
+.cap-shot{max-height:200px;width:auto;border:1px solid var(--line)}
+.cap-status{
+  font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);
+}
+.sr-file{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.filebtn{
+  cursor:pointer;display:inline-block;
+  background:var(--accent);color:var(--surface);border:1px solid var(--accent);
+  border-radius:3px;padding:10px 16px;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 86,"wght" 700;
+  font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;
+}
+.filebtn:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.filerow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.filebtn.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.filebtn.ghost:hover{background:transparent;border-color:var(--accent);color:var(--accent-2)}
+.sr-file:focus-visible + .filebtn,.filebtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.cap-hint{margin:0;font-size:13px;color:var(--ink-3)}
+.cap-status.err{color:var(--brick)}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fields .wide{grid-column:1/-1}
+@media (max-width:460px){.fields{grid-template-columns:1fr}}
+.f label{
+  display:block;font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:4px;
+}
+.f input,.f select,.f textarea{
+  width:100%;box-sizing:border-box;background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:3px;padding:7px 9px;
+  font-family:"Newsreader",Georgia,serif;font-size:15px;
+}
+.f textarea{font-size:14px;min-height:56px;resize:vertical}
+.f input[type="time"],.f input[type="date"]{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.cap-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.cap-actions .spacer{flex:1}
+.cap-warn{
+  font-size:13.5px;color:var(--brick);background:var(--brick-wash);
+  padding:8px 10px;border-left:2px solid var(--brick);margin:0;
+}
+
+/* ---------- coming up ---------- */
+.coming{margin-top:34px}
+.coming-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
+.soon{
+  position:relative;background:var(--surface);border:1px solid var(--line-soft);
+  border-top:3px solid var(--catc,var(--line));padding:13px 14px 14px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.soon .when{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2)}
+.soon .away{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent);
+}
+.soon h3{margin:0;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25;padding-right:20px}
+.soon .rfoot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:auto;padding-top:4px}
+.soon .thumb{width:100%;height:90px;object-fit:cover;border:1px solid var(--line-soft)}
+.pending{margin-top:34px}
+.pending-lede{margin:-4px 0 12px;font-size:14px;color:var(--ink-3);max-width:62ch;line-height:1.45}
+.soon.waiting{border-top-color:var(--line);opacity:.85}
+.soon.waiting .away{color:var(--ink-3)}
+.tag.poster{color:var(--accent);border:1px solid currentColor}
+.tag.unver{color:var(--ink-3);border:1px dashed currentColor}
+.editbtn{
+  appearance:none;cursor:pointer;background:none;border:1px solid var(--line);
+  color:var(--ink-3);border-radius:3px;padding:4px 8px;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 84,"wght" 700;
+  font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+}
+.editbtn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ---------- out-of-town ---------- */
+.afield{margin-top:34px}
+.run .rtravel{
+  font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-3);
+  display:flex;align-items:center;gap:6px;
+}
+.run .rtravel::before{content:"→";color:var(--accent);font-weight:600}
+
+/* ---------- day boards ---------- */
+.days{display:grid;grid-template-columns:repeat(auto-fit,minmax(308px,1fr));gap:30px;margin-top:34px}
+@media (max-width:760px){.days{grid-template-columns:1fr;gap:36px}}
+.day{min-width:0}
+.day-head{
+  display:flex;align-items:baseline;gap:10px;
+  padding-bottom:8px;border-bottom:2px solid var(--ink);
+}
+.day-head .dnum{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 120,"wght" 800;
+  font-size:clamp(26px,4.4vw,38px);line-height:1;letter-spacing:-.02em;text-transform:uppercase;
+}
+.day-head .dsub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-left:auto;text-align:right;line-height:1.4}
+.today-flag{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  background:var(--brick);color:var(--on-accent);padding:3px 6px;border-radius:2px;align-self:center;
+}
+
+.band{margin-top:22px}
+.band-label{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  text-transform:uppercase;letter-spacing:.13em;font-size:10.5px;color:var(--ink-3);
+  display:flex;align-items:center;gap:9px;margin-bottom:8px;
+}
+.band-label::after{content:"";flex:1;height:1px;background:var(--line-soft)}
+.band-label .bct{font-family:"IBM Plex Mono",monospace;letter-spacing:0;color:var(--ink-3);font-size:10.5px}
+
+.ev{
+  display:grid;grid-template-columns:56px 1fr auto;gap:0 12px;
+  padding:11px 0 12px;border-top:1px solid var(--line-soft);
+  position:relative;
+}
+.ev:first-of-type{border-top:1px solid var(--line)}
+.ev.picked{background:var(--accent-wash);box-shadow:-14px 0 0 var(--accent-wash),14px 0 0 var(--accent-wash)}
+.ev-when{
+  font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;
+  color:var(--ink-2);padding-top:2px;letter-spacing:-.02em;
+}
+.ev-when.tba{color:var(--ink-3);font-size:11px}
+.ev-body{min-width:0;display:flex;flex-direction:column;gap:5px}
+.ev-title{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 98,"wght" 700;
+  font-size:15.5px;line-height:1.22;letter-spacing:-.008em;margin:0;
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:7px;
+}
+.ev-title a{color:inherit;text-decoration:none;border-bottom:1.5px solid var(--line)}
+.ev-title a:hover{border-color:var(--accent);color:var(--accent)}
+.ev-venue{font-size:14px;color:var(--ink-2);line-height:1.35}
+.ev-venue .hood{color:var(--ink-3)}
+.ev-note{font-size:13.5px;color:var(--ink-3);line-height:1.4;font-style:italic}
+
+.tag{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  font-size:9.5px;letter-spacing:.09em;text-transform:uppercase;
+  padding:2.5px 5px;border-radius:2px;white-space:nowrap;
+}
+.tag.cat{color:var(--on-accent);background:var(--catc)}
+.tag.free{color:var(--c-market);border:1px solid currentColor}
+.tag.price{color:var(--ink-3);border:1px solid var(--line)}
+.tag.warn{color:var(--brick);border:1px solid currentColor}
+
+.times{display:flex;flex-wrap:wrap;gap:5px;margin-top:2px}
+.tbtn{
+  appearance:none;cursor:pointer;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;font-weight:500;
+  padding:4px 8px;border-radius:3px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink-2);
+  transition:all .12s;letter-spacing:-.02em;
+}
+.tbtn:hover{border-color:var(--accent);color:var(--accent)}
+.tbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.tbtn[aria-pressed="true"]::before{content:"✓ "}
+.tbtn.past,.pickbtn.past{opacity:.45}
+.pickbtn{
+  appearance:none;cursor:pointer;align-self:flex-start;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 84,"wght" 700;
+  font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  padding:5px 9px;border-radius:3px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink-2);margin-top:2px;transition:all .12s;
+}
+.pickbtn:hover{border-color:var(--accent);color:var(--accent)}
+.pickbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.pickbtn[aria-pressed="true"]::before{content:"✓ "}
+
+.empty-band{font-size:14px;color:var(--ink-3);font-style:italic;padding:10px 0}
+
+/* ---------- what has already started ---------- */
+.ev.is-over{opacity:.5}
+.ev.is-over .ev-when{text-decoration:line-through;text-decoration-thickness:1px;color:var(--ink-3)}
+.ev.is-live .ev-when{color:var(--brick);font-weight:600}
+.tag.live{background:var(--brick);color:var(--on-accent);border:1px solid var(--brick)}
+.tag.onnow{color:var(--accent);border:1px solid currentColor}
+.tag.over{color:var(--ink-3);border:1px solid var(--line)}
+.day.is-done .day-head{opacity:.55}
+.nowline{
+  display:flex;align-items:center;gap:8px;margin:2px 0 0;
+  font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--brick);
+}
+.nowline::after{content:"";flex:1;height:1px;background:var(--brick);opacity:.5}
+.nowline span{flex:none}
+.slot.is-over{opacity:.55}
+.slot.is-over .stime{text-decoration:line-through;text-decoration-thickness:1px}
+
+/* ---------- hiding ---------- */
+.hidebtn{
+  appearance:none;cursor:pointer;background:none;border:1px solid transparent;
+  color:var(--ink-3);width:22px;height:22px;border-radius:3px;
+  font-size:13px;line-height:1;padding:0;margin-top:2px;opacity:.5;transition:all .12s;
+  font-family:"Archivo",sans-serif;
+}
+.hidebtn:hover,.hidebtn:focus-visible{opacity:1;border-color:var(--brick);color:var(--brick)}
+.ev.is-hidden{opacity:.42}
+.ev.is-hidden .ev-title a{text-decoration:line-through;text-decoration-thickness:1px}
+.run.is-hidden,.hl-card.is-hidden{opacity:.42}
+.run.is-hidden .rtitle a,.hl-card.is-hidden .hl-title a{text-decoration:line-through}
+.restore{
+  appearance:none;cursor:pointer;background:none;border:1px solid var(--line);
+  color:var(--ink-3);border-radius:3px;padding:4px 8px;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 84,"wght" 700;
+  font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+}
+.restore:hover{border-color:var(--accent);color:var(--accent)}
+.hl-card .hidebtn{color:var(--panel-soft)}
+.hl-card .restore{border-color:var(--panel-line);color:var(--panel-soft)}
+.card-foot-r{display:contents}
+
+/* ---------- itinerary drawer ---------- */
+.drawer{
+  position:fixed;left:0;right:0;bottom:0;z-index:50;
+  background:var(--surface);border-top:2px solid var(--ink);
+  box-shadow:0 -10px 40px -20px rgba(0,0,0,.4);
+}
+.drawer-bar{
+  max-width:1240px;margin:0 auto;padding:11px 20px;
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+@media (max-width:560px){.drawer-bar{padding-inline:16px}}
+.drawer-bar .dcount{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 110,"wght" 800;
+  font-size:19px;letter-spacing:-.01em;
+}
+.drawer-bar .dlabel{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 600;
+  font-size:11px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
+}
+.dbtns{margin-left:auto;display:flex;gap:7px;flex-wrap:wrap}
+.btn{
+  appearance:none;cursor:pointer;
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 86,"wght" 700;
+  font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+  padding:7px 12px;border-radius:3px;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);transition:all .12s;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.quiet{border-color:transparent;color:var(--ink-3)}
+.btn.quiet:hover{color:var(--brick)}
+
+.drawer-body{
+  max-width:1240px;margin:0 auto;padding:0 20px 18px;
+  max-height:min(56vh,520px);overflow-y:auto;
+}
+@media (max-width:560px){.drawer-body{padding-inline:16px}}
+.drawer[data-open="false"] .drawer-body{display:none}
+.plan{border-top:1px solid var(--line)}
+.plan-day{margin-top:14px}
+.plan-day h3{
+  font-variation-settings:"wdth" 88,"wght" 700;
+  font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:var(--ink-3);
+  margin:0 0 6px;
+}
+.slot{
+  display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:start;
+  padding:9px 0;border-top:1px solid var(--line-soft);
+}
+.slot .stime{font-family:"IBM Plex Mono",monospace;font-size:12.5px;font-weight:500;color:var(--ink);letter-spacing:-.02em}
+.slot .sname{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25}
+.slot .sname a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line)}
+.slot .swhere{font-size:13.5px;color:var(--ink-2)}
+.slot .sdrop{align-self:center}
+.gap{
+  display:grid;grid-template-columns:64px 1fr;gap:12px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);
+  padding:3px 0;
+}
+.gap.clash{color:var(--brick);font-weight:500}
+.slot .sdrop{display:flex;gap:6px;align-items:center}
+.calbtn{
+  text-decoration:none;white-space:nowrap;
+  border:1px solid var(--line);border-radius:3px;padding:4px 8px;color:var(--ink-3);
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 84,"wght" 700;
+  font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+}
+.calbtn:hover{border-color:var(--accent);color:var(--accent)}
+.xbtn{
+  appearance:none;cursor:pointer;background:none;border:1px solid var(--line);
+  color:var(--ink-3);width:24px;height:24px;border-radius:3px;font-size:14px;line-height:1;
+}
+.xbtn:hover{border-color:var(--brick);color:var(--brick)}
+.plan-empty{padding:18px 0 6px;font-size:15px;color:var(--ink-2);max-width:58ch}
+.plan-empty b{font-family:"Archivo",sans-serif;font-variation-settings:"wght" 700;font-style:normal}
+
+.toast{
+  position:fixed;bottom:calc(100% + 0px);left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--ground);
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 88,"wght" 600;
+  font-size:12px;letter-spacing:.04em;padding:8px 14px;border-radius:3px;
+  margin-bottom:10px;pointer-events:none;opacity:0;transition:opacity .2s;white-space:nowrap;
+}
+.toast[data-show="true"]{opacity:1}
+
+footer.foot{
+  border-top:1px solid var(--line);margin-top:44px;padding-top:18px;
+  font-size:13.5px;color:var(--ink-3);display:flex;flex-wrap:wrap;gap:6px 18px;
+}
+footer.foot a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)}
+footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
+.foot-note{flex-basis:100%;max-width:70ch;line-height:1.5}
+#taste-note{color:var(--ink-2)}
+#taste-note .lnk{
+  background:none;border:none;padding:0;cursor:pointer;color:var(--ink-3);
+  font:inherit;border-bottom:1px solid var(--line);
+}
+#taste-note .lnk:hover{color:var(--brick);border-color:var(--brick)}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+@media print{
+  .controls,.drawer-bar .dbtns,.standing,.days,.hl,.afield,footer.foot{display:none}
+  .drawer{position:static;border:none;box-shadow:none}
+  .drawer-body{max-height:none;overflow:visible}
+  body{background:#fff;color:#000}
+}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <p class="kicker">Anglophone-friendly · Montréal</p>
+      <h1>The Weekend <span class="em">Board</span></h1>
+      <p class="dateline" id="dateline">Everything worth leaving the house for this weekend, in town and out of it. Tick what you want, hide what you don&rsquo;t, and the board builds your itinerary at the bottom of the page.</p>
+    </div>
+    <div class="stamp" id="stamp"></div>
+  </header>
+
+  <div class="controls" id="controls" role="group" aria-label="Filters"></div>
+
+  <section class="hl" id="hl" hidden>
+    <p class="hl-label">Don't miss</p>
+    <div class="hl-grid" id="hl-grid"></div>
+  </section>
+
+  <section class="standing" id="standing" hidden>
+    <p class="sect-label">Running all weekend</p>
+    <div class="standing-grid" id="standing-grid"></div>
+  </section>
+
+  <div class="days" id="days"></div>
+
+  <section class="coming" id="coming" hidden>
+    <p class="sect-label">Coming up · from posters you photographed</p>
+    <div class="coming-grid" id="coming-grid"></div>
+  </section>
+
+  <section class="afield" id="afield" hidden>
+    <p class="sect-label">Out of town · day and half-day trips</p>
+    <div class="standing-grid" id="afield-grid"></div>
+  </section>
+
+  <section class="pending" id="pending" hidden>
+    <p class="sect-label">Waiting to be read</p>
+    <p class="pending-lede">Saved with the photo. The morning refresh reads the poster, checks it against the venue, and they join the board. Fill in a title and a date yourself and one appears straight away.</p>
+    <div class="coming-grid" id="pending-grid"></div>
+  </section>
+
+  <footer class="foot">
+    <span>Sources:</span>
+    <a href="https://cultmtl.com/" target="_blank" rel="noopener">Cult MTL</a>
+    <a href="https://www.lavitrine.com/en" target="_blank" rel="noopener">La Vitrine</a>
+    <a href="https://www.evenko.ca/en" target="_blank" rel="noopener">Evenko</a>
+    <a href="https://www.mtl.org/en/experience/things-to-do-september" target="_blank" rel="noopener">Tourisme Montréal</a>
+    <a href="https://www.quartierdesspectacles.com/en" target="_blank" rel="noopener">Quartier des Spectacles</a>
+    <a href="https://www.oldportofmontreal.com/events" target="_blank" rel="noopener">Old Port</a>
+    <a href="https://www.timeout.com/montreal" target="_blank" rel="noopener">Time Out</a>
+    <a href="https://www.sepaq.com/" target="_blank" rel="noopener">Sépaq</a>
+    <a href="https://www.quebecvacances.com/en" target="_blank" rel="noopener">Québec Getaways</a>
+    <p class="foot-note" id="taste-note"></p>
+    <p class="foot-note">Film version codes follow Montreal house style — <b>VOA</b> original English, <b>VOF/VF</b> French, <b>VOSTA</b> original with English subtitles, <b>VOSTF</b> original with French subtitles. Always confirm showtimes and availability on the venue's own page before you travel; sold-out and last-minute changes happen.</p>
+  </footer>
+</div>
+
+<div class="cap-overlay" id="cap-overlay" hidden>
+  <section class="cap" role="dialog" aria-modal="true" aria-labelledby="cap-h">
+    <h2 id="cap-h">Add a poster</h2>
+    <p class="lede" id="cap-lede">Photograph a poster or flyer and I'll read the details off it. Check what I got before saving — posters lie about as often as they don't.</p>
+
+    <div class="cap-drop" id="cap-drop">
+      <img class="cap-shot" id="cap-shot" alt="The poster you selected" hidden>
+      <div class="filerow" id="cap-buttons">
+        <label class="filebtn" for="cap-file">Take a photo</label>
+        <input type="file" id="cap-file" accept="image/*" capture="environment" class="sr-file">
+        <label class="filebtn ghost" for="cap-lib">Choose an existing photo</label>
+        <input type="file" id="cap-lib" accept="image/*" class="sr-file">
+      </div>
+      <p class="cap-hint" id="cap-hint">A straight-on shot of the whole poster reads best. HEIC shots from an iPhone are fine — they're converted here.</p>
+      <p class="cap-status" id="cap-status"></p>
+    </div>
+
+    <div id="cap-form" hidden>
+      <p class="cap-warn" id="cap-warn" hidden></p>
+      <div class="fields">
+        <div class="f wide"><label for="f-title">What is it</label><input id="f-title" type="text"></div>
+        <div class="f wide"><label for="f-sub">Line under the title</label><input id="f-sub" type="text" placeholder="lineup, company, descriptor"></div>
+        <div class="f"><label for="f-cat">Category</label><select id="f-cat"></select></div>
+        <div class="f"><label for="f-time">Start time</label><input id="f-time" type="time"></div>
+        <div class="f"><label for="f-start">First date</label><input id="f-start" type="date"></div>
+        <div class="f"><label for="f-end">Last date</label><input id="f-end" type="date"></div>
+        <div class="f wide"><label for="f-venue">Venue</label><input id="f-venue" type="text"></div>
+        <div class="f wide"><label for="f-hood">Address or neighbourhood</label><input id="f-hood" type="text"></div>
+        <div class="f"><label for="f-price">Price as printed</label><input id="f-price" type="text" placeholder="$25 / Free"></div>
+        <div class="f"><label for="f-url">Link on the poster</label><input id="f-url" type="url" placeholder="https://"></div>
+        <div class="f wide"><label for="f-note">Anything else worth keeping</label><textarea id="f-note"></textarea></div>
+      </div>
+    </div>
+
+    <div class="cap-actions">
+      <button class="btn" id="cap-cancel">Cancel</button>
+      <span class="spacer"></span>
+      <button class="btn" id="cap-retry" hidden>Read it again</button>
+      <button class="btn quiet" id="cap-delete" hidden>Remove</button>
+      <button class="btn primary" id="cap-save" hidden>Save to the board</button>
+    </div>
+  </section>
+</div>
+
+<div class="drawer" id="drawer" data-open="false">
+  <div class="toast" id="toast"></div>
+  <div class="drawer-bar">
+    <span class="dcount" id="dcount">0</span>
+    <span class="dlabel" id="dlabel">nothing picked yet</span>
+    <div class="dbtns">
+      <button class="btn" id="toggle-plan" aria-expanded="false">Show itinerary</button>
+
+      <button class="btn primary" id="btn-copy" disabled>Copy plan</button>
+      <button class="btn quiet" id="btn-clear" disabled>Clear</button>
+    </div>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<style>
+/* ---------- standalone on iOS ----------
+   The drawer is fixed to the bottom and lands on the home indicator;
+   the gutters meet the rounded corners in landscape. Both are fixed
+   here. Nothing below touches the filter bar's HEIGHT — the sticky
+   bar wraps every pill and stays that way (see the v12/v15 note in
+   the board source). Only its side padding is widened. */
+@supports (padding: max(0px)) {
+  .wrap{
+    padding-left:max(20px, env(safe-area-inset-left));
+    padding-right:max(20px, env(safe-area-inset-right));
+    padding-bottom:calc(140px + env(safe-area-inset-bottom));
+  }
+  .controls{
+    padding-left:max(20px, env(safe-area-inset-left));
+    padding-right:max(20px, env(safe-area-inset-right));
+  }
+  .drawer-bar{padding-bottom:calc(11px + env(safe-area-inset-bottom))}
+  .drawer-body{padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+  .cap-overlay{
+    padding-top:max(24px, env(safe-area-inset-top));
+    padding-bottom:max(24px, env(safe-area-inset-bottom));
+  }
+  @media (max-width:560px){
+    .wrap{
+      padding-left:max(16px, env(safe-area-inset-left));
+      padding-right:max(16px, env(safe-area-inset-right));
+    }
+    .controls{
+      padding-left:max(16px, env(safe-area-inset-left));
+      padding-right:max(16px, env(safe-area-inset-right));
+    }
+  }
+}
+/* Standalone has no pull-to-refresh and no rubber-band chrome to hide. */
+@media (display-mode: standalone){
+  body{overscroll-behavior-y:none}
+}
+</style>
+
+<!-- Reimplements db / assets / sample against this app's own API.
+     Must load before the board script. -->
+<script src="/claude-shim.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   WEEKEND DATA — regenerate this block on each daily refresh.
+   ============================================================ */
+var WEEKEND = {
+  id: "2026-09-12",
+  label: "Saturday 12 – Sunday 13 September 2026",
+  updated: "2026-09-13T07:25:00-04:00",
+  days: [
+    { key:"sat", date:"2026-09-12", name:"Saturday", num:"Sat 12 Sep" },
+    { key:"sun", date:"2026-09-13", name:"Sunday",   num:"Sun 13 Sep" }
+  ]
+};
+
+var CATS = [
+  { id:"theatre", label:"Theatre",   color:"var(--c-theatre)" },
+  { id:"film",    label:"Film",      color:"var(--c-film)" },
+  { id:"music",   label:"Music",     color:"var(--c-music)" },
+  { id:"dance",   label:"Dance",     color:"var(--c-dance)" },
+  { id:"museum",  label:"Exhibits",  color:"var(--c-museum)" },
+  { id:"fest",    label:"Outdoors",  color:"var(--c-fest)" },
+  { id:"market",  label:"Food & Markets", color:"var(--c-market)" }
+];
+
+/* Standing items: run across the whole weekend, no single start time. */
+var STANDING = [
+  { id:"jackalope", cat:"fest", title:"JACKALOPE", url:"https://jackalope.co/pages/festival/montreal",
+    venue:"Jacques-Cartier Pier, Old Port", hood:"métro Champ-de-Mars",
+    when:"Fri 11 – Sun 13 Sep · daytime", free:true,
+    note:"Final stop of the world series: vert skateboarding with Bob Burnquist, FMX and BMX demos, bouldering, calisthenics, food trucks. Grounds are free; only the premium pass costs anything." },
+  { id:"huit-huit", cat:"market", title:"Huit-Huit Fest", url:"https://www.parcjeandrapeau.com/en/rendez-vous-gourmands-culinary-celebration-chefs-restaurateurs-tastings-barbecues-music-entertainments-jardins-des-floralies-montreal/",
+    venue:"Jardin des Floralies, Parc Jean-Drapeau", hood:"Île Notre-Dame · métro Jean-Drapeau",
+    when:"Fri 11 – Sun 13 Sep · 4 – 10 p.m.", free:true,
+    note:"Mid-autumn festival in the Floralies gardens — Asian street food, mahjong tables, and a flameless lantern launch after dark. Entry is free; lanterns and food are pay-as-you-go and the lanterns sell out." },
+  { id:"creole-market", cat:"market", title:"Creole Market", url:"https://www.oldportofmontreal.com/event/creole-market",
+    venue:"Belvédère du Centre des sciences, Old Port", hood:"métro Champ-de-Mars",
+    when:"Sat 12 – Sun 13 Sep", free:true,
+    note:"Martinique heritage weekend — live performance, traditional dance, cooking workshops, tastings and domino tournaments on the river terrace." },
+  { id:"ferment-fest", cat:"market", title:"Ferment Fest MTL", url:"https://www.marchespublics-mtl.com/en/events",
+    venue:"Jean-Talon Market", hood:"Little Italy · métro Jean-Talon",
+    when:"Sat 12 – Sun 13 Sep · 10 a.m. – 6 p.m.", free:true,
+    note:"Fermentation takes over the market hall: workshops, culinary demonstrations and an artisan fair, at the peak of the harvest season." },
+  { id:"quai-festif", cat:"music", title:"Le Quai Festif", url:"https://www.oldportofmontreal.com/event/le-quai-festif",
+    venue:"Quai de l'Horloge, Old Port", hood:"métro Champ-de-Mars",
+    when:"Sat 12 – Sun 13 Sep · 18+", price:"Ticketed",
+    note:"Third edition. DJs, live bands and collectives from Montreal's Afro-Caribbean and Latin scenes, on the pier." },
+  { id:"mtl-series", cat:"film", title:"Montréal Séries Festival", url:"https://www.montrealseries.com/en/programme",
+    venue:"Auditorium, Grande Bibliothèque", hood:"475 boul. De Maisonneuve E · métro Berri-UQAM",
+    when:"Wed 9 – Sun 13 Sep · closing day", price:"$10 a screening · $30 festival pass",
+    note:"North America's first festival given entirely to episodic series. Three screenings today, then the audience award and the first acting prizes at 10 p.m." },
+  { id:"fqd", cat:"dance", title:"Festival Quartiers Danses", url:"https://quartiersdanses.com/en/",
+    venue:"Place des Arts and venues citywide", hood:"métro Place-des-Arts",
+    when:"Wed 9 – Sat 19 Sep", price:"$49 · packages from $30",
+    note:"Twenty-fourth edition, with around twenty free outdoor performances alongside the ticketed mainstage bill. Tonight's double bill is listed below." },
+  { id:"phi", cat:"museum", title:"Otherworlds + Lies lies lies", url:"https://phi.ca/en/whats-on/",
+    venue:"PHI, 451 rue Saint-Jean & 407 rue Saint-Pierre", hood:"Old Montreal · métro Square-Victoria",
+    when:"Final day Sun 13 Sep", price:"$10–$30",
+    note:"Jakob Kudsk Steensen's simulated ecosystems on one street and Paola Pivi's Come check it out. Lies lies lies on the next. Both close tonight." },
+  { id:"mbam", cat:"museum", title:"Montreal Museum of Fine Arts", url:"https://www.mbam.qc.ca/en/exhibitions/",
+    venue:"1380 rue Sherbrooke O", hood:"métro Guy-Concordia",
+    when:"Sat & Sun · daytime", price:"Ticketed",
+    note:"Rising Suns: Art from the Confederacies of the Great Lakes and Rivers runs to 11 October; Ready, Set, Go! Sports Inspire Art to 12 October; Keerat Kaur's Sweet Speech only to 20 September." },
+  { id:"mccord", cat:"museum", title:"McCord Stewart Museum", url:"https://www.musee-mccord-stewart.ca/en/",
+    venue:"690 Sherbrooke St W", hood:"métro McGill",
+    when:"Sat & Sun · 10 a.m. – 5 p.m.", price:"Free under 18",
+    note:"On now: Montreal 1976 — An Olympic Feat; On the Menu — Montreal's Restaurant Story; Indigenous Voices of Today." }
+];
+
+/* Timed events. t = "HH:MM" 24h. times = several showings of the same thing.
+   dur = minutes (best estimate where the venue doesn't publish one). */
+var EVENTS = [
+  /* ---------- SATURDAY ---------- */
+  { day:"sat", cat:"film", title:"The Little Prince", sub:"VF · Petits Modernes", times:["09:30"], dur:105,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/le-petit-prince-petits-modernes/" },
+  { day:"sat", cat:"market", title:"Bazar du CCA", times:["10:00"], dur:240, free:true,
+    venue:"Canadian Centre for Architecture, 1920 rue Baile", hood:"Shaughnessy Village · métro Guy-Concordia",
+    url:"https://www.cca.qc.ca/en/", note:"Books and surplus from the CCA's own shelves, 10 a.m. to 2 p.m., with free access to the museum while it runs." },
+  { day:"sat", cat:"market", title:"Annual Sample Sale", times:["11:00"], dur:360, free:true,
+    venue:"4267 boul. Saint-Laurent, Suite 300", hood:"Plateau · métro Mont-Royal",
+    url:"https://cultmtl.com/events/", note:"Open until 5 p.m." },
+  { day:"sat", cat:"film", title:"Hemela", sub:"VOSTA · with the director", times:["11:45"], dur:110,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/hemela-cine-rencontre/",
+    note:"Pirouz Nemati in the room for a post-screening conversation." },
+  { day:"sat", cat:"music", title:"SUNSAT", sub:"rooftop day party", times:["12:00"], dur:480,
+    venue:"SAT — Buvette rooftop", hood:"Quartier des Spectacles · métro Saint-Laurent",
+    url:"https://tixr.com/e/194404", price:"Ticketed", note:"Noon to 8 p.m. on the third-floor terrace." },
+  { day:"sat", cat:"fest", title:"Tiny Bubbles Make Me Happy", sub:"bubble art, all ages", times:["13:00"], dur:120, free:true,
+    venue:"9300 rue Meilleur", hood:"Ahuntsic-Cartierville",
+    url:"https://cultmtl.com/events/" },
+  { day:"sat", cat:"film", title:"The Philadelphia Story", sub:"VOA · Cukor, 1940", times:["13:20"], dur:132,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/the-philadelphia-story/" },
+  { day:"sat", cat:"fest", title:"Shiba and Akita Gathering", times:["14:00"], dur:120, free:true,
+    venue:"Avenue Lacombe", hood:"Côte-des-Neiges · métro Université-de-Montréal",
+    url:"https://montreal.citycrunch.ca/2026/09/10/fin-de-semaine-a-montreal-110926/",
+    note:"Exactly what it says: the city's Shibas and Akitas and their owners, on one street, for an afternoon." },
+  { day:"sat", cat:"film", title:"Tony", sub:"comedy-drama · 1h46", times:["14:15","19:00"], dur:106,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sat", cat:"film", title:"Hope", sub:"horror-thriller · 2h40", times:["14:30","18:00","21:00"], dur:160,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sat", cat:"film", title:"Teenage Sex and Death at Camp Miasma", sub:"VOSTF · Schoenbrun", times:["15:45"], dur:115,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/teenage-sex-and-death-at-camp-miasma/" },
+  { day:"sat", cat:"dance", title:"Ballet of Lights: Sleeping Beauty", times:["16:00"], dur:90,
+    venue:"Théâtre Rialto", hood:"Mile End · 5723 av. du Parc", price:"From $29.60",
+    url:"https://www.theatrerialto.ca/calendar",
+    note:"Tchaikovsky danced in glow-in-the-dark costume under UV light. Aimed squarely at families." },
+  { day:"sat", cat:"film", title:"It Ends", sub:"fantasy drama · 1h29", times:["16:30","21:20"], dur:89,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sat", cat:"film", title:"Buddy", sub:"sci-fi horror · 1h35", times:["16:45"], dur:95,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sat", cat:"fest", title:"Boogie Night: Back to the Roller Disco Era", times:[], bandHint:"evening", dur:180, free:true,
+    venue:"Esplanade Tranquille", hood:"Quartier des Spectacles · métro Place-des-Arts",
+    url:"https://www.quartierdesspectacles.com/en/festivals-and-events",
+    note:"Open-air roller disco on the Esplanade, second and final night. Free, skate rental on site; the start time isn't published — check the Quartier des Spectacles calendar." },
+  { day:"sat", cat:"film", title:"The Bridges of Madison County", sub:"VOSTF · Eastwood, 1995", times:["18:15"], dur:135,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/the-bridges-of-madison-county/" },
+  { day:"sat", cat:"music", title:"AC/DC — PWR UP", sub:"with The Pretty Reckless", times:["19:00"], dur:150,
+    venue:"Parc Jean-Drapeau", hood:"métro Jean-Drapeau", price:"Ticketed",
+    url:"https://evenko.ca/en/events/parc-jean-drapeau/ac-dc?code=e006614",
+    note:"Stadium show on the island. Plan the metro back — it queues." },
+  { day:"sat", cat:"music", title:"AC/DC PWR/UP Pop-Up", times:["19:00"], dur:240, free:true,
+    venue:"Les Foufounes Électriques", hood:"87 rue Sainte-Catherine E · métro Saint-Laurent",
+    url:"https://cultmtl.com/events/", note:"Free companion party for anyone without a ticket to the island." },
+  { day:"sat", cat:"dance", title:"In the end, it's all the same thing", sub:"Satosphere · 40 min", times:["19:00"], dur:40,
+    venue:"SAT — Satosphere", hood:"Quartier des Spectacles · métro Saint-Laurent",
+    url:"https://www.tixr.com/groups/sat/events/in-the-end-it-s-all-the-same-thing-195442", price:"Ticketed",
+    note:"Cristo and Francisco Riffo — live microscopy and ambisonic sound in the dome. May cause dizziness." },
+  { day:"sat", cat:"music", title:"President", sub:"with Showing Teeth and Cenobia", times:["19:30"], dur:150,
+    venue:"MTELUS", hood:"59 rue Sainte-Catherine E · métro Saint-Laurent", price:"Ticketed",
+    url:"https://evenko.ca/en/events/mtelus/president?code=e008038" },
+  { day:"sat", cat:"theatre", title:"Ride the Cyclone", sub:"Not Safe For Magic Productions", times:["20:00"], dur:110,
+    venue:"Centaur Theatre", hood:"Old Montreal · métro Place-d'Armes", price:"Ticketed",
+    url:"https://centaurtheatre.com/whats-on/",
+    note:"Running 10–19 Sep. Cult musical about six dead choir kids arguing for a second life. Confirm the exact curtain with the box office." },
+  { day:"sat", cat:"music", title:"Kim Gordon", sub:"with Voyeur", times:["20:00"], dur:120,
+    venue:"Théâtre Beanfield", hood:"Saint-Henri · métro Lionel-Groulx", price:"Ticketed",
+    url:"https://evenko.ca/en/events/theatre-beanfield/kim-gordon?code=e008067" },
+  { day:"sat", cat:"music", title:"Don West", sub:"with Kesmar", times:["20:00"], dur:120,
+    venue:"Le Studio TD", hood:"1450 rue Sainte-Catherine O · métro Guy-Concordia", price:"Ticketed",
+    url:"https://evenko.ca/en/events/le-studio-td/don-west?code=e008485" },
+  { day:"sat", cat:"music", title:"ADÉLA", times:["20:00"], dur:120,
+    venue:"Fairmount Theatre", hood:"Mile End · 5240 av. du Parc", price:"Ticketed",
+    url:"https://evenko.ca/en/events/fairmount-theatre/adela?code=e008477" },
+  { day:"sat", cat:"music", title:"Niska", times:["20:00"], dur:120,
+    venue:"Place Bell, Laval", hood:"métro Montmorency then shuttle", price:"Ticketed",
+    url:"https://evenko.ca/en/events" },
+  { day:"sat", cat:"dance", title:"Sensibilities, marginalities", sub:"Festival Quartiers Danses", times:["20:00"], dur:90,
+    venue:"Cinquième Salle, Place des Arts", hood:"métro Place-des-Arts", price:"$49 · waitlist",
+    url:"https://www.placedesarts.com/en/event/sensibilities-marginalities",
+    note:"Lina Cruz's 1+1 miniatures, drawn from Quebec poetry, then Sonia Gómez's ELK — 60 minutes of a body working clay, wool, glass and latex. Listed sold out; waitlist open." },
+  { day:"sat", cat:"music", title:"A Radio Active Community", sub:"SUONI x CKUT x CBMA", times:["20:00"], dur:150,
+    venue:"La Sala Rossa", hood:"Plateau · 4848 boul. Saint-Laurent", price:"$15",
+    url:"https://www.casadelpopolo.com/en",
+    note:"David and Sydney Dacks, Anna-Jane McIntyre and Pat Dillon Moore on community radio as a live form." },
+  { day:"sat", cat:"music", title:"Sortie 27 et Sens Uniques", times:["20:30"], dur:150,
+    venue:"Casa del Popolo", hood:"Plateau · 4873 boul. Saint-Laurent", price:"$10",
+    url:"https://www.casadelpopolo.com/en" },
+  { day:"sat", cat:"music", title:"Bragolin + Carrellee + Bad Faith Actor", times:["20:30"], dur:180,
+    venue:"La Toscadura", hood:"Plateau · presented by Blue Skies Turn Black", price:"$26",
+    url:"https://www.casadelpopolo.com/en" },
+  { day:"sat", cat:"dance", title:"CHŌRA", sub:"Satosphere · 40–60 min", times:["20:30"], dur:60,
+    venue:"SAT — Satosphere", hood:"Quartier des Spectacles · métro Saint-Laurent",
+    url:"https://tixr.com/e/198390", price:"Ticketed" },
+  { day:"sat", cat:"film", title:"Train to Busan", sub:"VOSTA · 10th anniversary", times:["21:00"], dur:118,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/train-to-busan-10e-anniversaire/" },
+  { day:"sat", cat:"music", title:"Dub Permanence", times:["21:00"], dur:240,
+    venue:"La Sotterenea", hood:"Plateau · under La Sala Rossa", price:"$20",
+    url:"https://www.casadelpopolo.com/en" },
+  { day:"sat", cat:"film", title:"Fallen Angels", sub:"Wong Kar-wai, 1995 · 1h39", times:["21:30"], dur:99,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+
+  /* ---------- SUNDAY ---------- */
+  { day:"sun", cat:"fest", title:"Bird migration observation", times:["08:00"], dur:240,
+    venue:"Jardin botanique de Montréal", hood:"4101 rue Sherbrooke E · métro Pie-IX", price:"$20 non-members",
+    url:"https://espacepourlavie.ca/en",
+    note:"Four hours with a guide at the height of the autumn passage. Binoculars lent on site; dress for standing still." },
+  { day:"sun", cat:"market", title:"Québec's Open Farm Day at Atwater Market", times:["09:00","13:00"], dur:195, free:true,
+    venue:"Atwater Market", hood:"Saint-Henri · métro Lionel-Groulx",
+    url:"https://www.marchespublics-mtl.com/en/events",
+    note:"The city end of the province-wide farm open house: two sessions, 9 a.m. to 12:15 and 1 p.m. to 4:15, with producers at the stalls." },
+  { day:"sun", cat:"film", title:"Kindergarten", sub:"VOF · with the director", times:["09:30"], dur:84,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/jardin-denfants-cine-rencontre/",
+    note:"Jean-François Caissy present for a Q&A." },
+  { day:"sun", cat:"film", title:"The Red Balloon + White Mane", sub:"VOSTA · Petits Modernes", times:["09:30"], dur:73,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/schedule/",
+    note:"Lamorisse's two shorts together, English subtitles, pitched at children but not written down to them." },
+  { day:"sun", cat:"fest", title:"Grand Prix Cycliste de Montréal", sub:"UCI WorldTour · 17 laps of the mountain", times:["10:15"], dur:330, free:true,
+    venue:"Mount Royal circuit · fan village at Parc Jeanne-Mance", hood:"métro Mont-Royal",
+    url:"https://gpcqm.ca/en/program-new/",
+    star:"A WorldTour peloton climbs Camillien-Houde seventeen times between 10:15 and about 3:45, and it costs nothing to watch from anywhere on the circuit. Partway up the climb there is a giant screen and a DJ, so you can follow the race you are standing inside.",
+    note:"Fan village opens at 9 a.m., team presentation 9:05 to 10:05, race off at 10:15, finish around 3:45, podium at 4. Roads on the mountain close for the day." },
+  { day:"sun", cat:"market", title:"Sunrise yoga at the Creole Market", times:["10:00"], dur:60, free:true,
+    venue:"Belvédère du Centre des sciences, Old Port", hood:"métro Champ-de-Mars",
+    url:"https://www.oldportofmontreal.com/event/creole-market",
+    note:"One hour on the panoramic terrace, with Idolem. All levels, and accessible for guests with reduced mobility." },
+  { day:"sun", cat:"music", title:"Pre-Piknic at the Casino", times:["11:00"], dur:240, free:true,
+    venue:"Casino de Montréal", hood:"Île Notre-Dame · métro Jean-Drapeau",
+    url:"https://piknicelectronik.com/en",
+    note:"Andrea de Tour at 11, Tali Rose at 1 — free, and a ten-minute walk from where the Piknic starts at 4." },
+  { day:"sun", cat:"film", title:"Sick of Myself", sub:"VOSTA · staff pick", times:["11:30"], dur:97,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/sick-of-myself-coups-de-coeur-de-lequipe/" },
+  { day:"sun", cat:"fest", title:"Tam-Tams du mont Royal", times:["12:00"], dur:360, free:true,
+    venue:"Parc Jeanne-Mance, at the Cartier monument", hood:"métro Mont-Royal",
+    url:"https://www.mtl.org/en/what-to-do/festivals-and-events/les-tam-tams-du-mont-royal",
+    note:"The weekly drum circle, one of the last Sundays of the season. Shares the mountain with the bike race today — expect crowds and road closures." },
+  { day:"sun", cat:"film", title:"Hope", sub:"horror-thriller · 2h40", times:["14:15","17:40","21:00"], dur:160,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sun", cat:"film", title:"Fallen Angels", sub:"Wong Kar-wai, 1995 · 1h39", times:["14:30"], dur:99,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sun", cat:"film", title:"Nightmare's Advice", sub:"VOSTA · Després-Larose & Tapia Rousiouk", times:["13:30"], dur:148,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/cauchemar-conseil/" },
+  { day:"sun", cat:"film", title:"Anime: Une épopée japonaise", sub:"Montréal Séries · documentary", times:["15:00"], dur:105,
+    venue:"Auditorium, Grande Bibliothèque", hood:"475 boul. De Maisonneuve E · métro Berri-UQAM", price:"$10",
+    url:"https://www.montrealseries.com/en/programme" },
+  { day:"sun", cat:"music", title:"Piknic Électronik", sub:"Prospa · Cezaire · Didi Han · Elles & U", times:["16:00"], dur:330,
+    venue:"Parc Jean-Drapeau", hood:"métro Jean-Drapeau", price:"Ticketed",
+    url:"https://piknicelectronik.com/en",
+    note:"Four until half nine on two stages, with the Roche Musique stage closing on a Cezaire b2b Didi Han set at 8. Five Sundays left in the season." },
+  { day:"sun", cat:"film", title:"Buddy", sub:"sci-fi horror · 1h35", times:["16:30","21:15"], dur:95,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sun", cat:"film", title:"Trainspotting", sub:"VOSTF · 30th anniversary", times:["16:30"], dur:94,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/trainspotting-30e-anniversaire/" },
+  { day:"sun", cat:"film", title:"It Ends", sub:"fantasy drama · 1h29", times:["16:50","21:30"], dur:89,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sun", cat:"film", title:"Au service de la mafia", sub:"Montréal Séries · documentary", times:["17:00"], dur:105,
+    venue:"Auditorium, Grande Bibliothèque", hood:"475 boul. De Maisonneuve E · métro Berri-UQAM", price:"$10",
+    url:"https://www.montrealseries.com/en/programme" },
+  { day:"sun", cat:"film", title:"The Good, the Bad and the Ugly", sub:"VASTF · 60th anniversary · 2h59", times:["18:30"], dur:179,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/the-good-the-bad-and-the-ugly-60e-anniversaire/",
+    star:"Three hours of Leone in a room that programmes him properly, rather than at home with the lights on. Cinéma Moderne follows it with For a Few Dollars More at 8:45 if you want the pair.",
+    note:"French subtitles on the English-language print." },
+  { day:"sun", cat:"film", title:"Tony", sub:"comedy-drama · 1h46", times:["18:45"], dur:106,
+    venue:"Cinéma du Parc", hood:"Milton-Parc · 3575 av. du Parc",
+    url:"https://www.cinemaduparc.com/en" },
+  { day:"sun", cat:"theatre", title:"Lyle Forever: Therapy Gecko Live", times:["19:00"], dur:120,
+    venue:"La Sala Rossa", hood:"Plateau · 4848 boul. Saint-Laurent", price:"Ticketed",
+    url:"https://www.casadelpopolo.com/en",
+    note:"The man who takes strangers' calls in a lizard costume, doing it in front of a room instead of a webcam." },
+  { day:"sun", cat:"music", title:"Flamenco Chiíto Duo", times:["19:30"], dur:90,
+    venue:"Casa del Popolo", hood:"Plateau · 4873 boul. Saint-Laurent", price:"$20",
+    url:"https://www.casadelpopolo.com/en" },
+  { day:"sun", cat:"dance", title:"Montréal / Hong Kong: Gazes, Voices, and Bodies", sub:"Festival Quartiers Danses", times:["20:00"], dur:100,
+    venue:"Cinquième Salle, Place des Arts", hood:"métro Place-des-Arts", price:"$49 · packages from $30",
+    url:"https://www.placedesarts.com/en/event/montreal-hong-kong-gazes-voices-and-bodies",
+    note:"Béatrice Larrivée's Maintenant, Nous paired with KT Yau Ka-hei's The Moment 刻. French and English with English subtitles. Contains full nudity." },
+  { day:"sun", cat:"music", title:"Jungle", sub:"with Rio Kosta", times:["20:00"], dur:120,
+    venue:"Place Bell, Laval", hood:"métro Montmorency then shuttle", price:"Ticketed",
+    url:"https://evenko.ca/en/events/place-bell/jungle?code=e007996" },
+  { day:"sun", cat:"music", title:"Damien Jurado", sub:"with St. Yuma", times:["20:00"], dur:150,
+    venue:"Bar le Ritz PDB", hood:"Villeray · 179 rue Jean-Talon O", price:"Ticketed",
+    url:"https://www.barleritzpdb.com/",
+    note:"Doors at 7, on at 8, 18+. Blue Skies Turn Black presents." },
+  { day:"sun", cat:"music", title:"French Police", times:["20:00"], dur:120,
+    venue:"Les Foufounes Électriques", hood:"87 rue Sainte-Catherine E · métro Saint-Laurent", price:"Ticketed",
+    url:"https://www.songkick.com/concerts/43246582-french-police-at-les-foufounes-electriques",
+    note:"Chicago darkwave trio. Doors 8 p.m." },
+  { day:"sun", cat:"theatre", title:"An Evening with Steven Pinker", times:["20:00"], dur:120,
+    venue:"Théâtre Rialto", hood:"Mile End · 5723 av. du Parc", price:"Ticketed",
+    url:"https://www.theatrerialto.ca/calendar" },
+  { day:"sun", cat:"film", title:"Groupe de soutien", sub:"Montréal Séries · Canadian comedy", times:["20:00"], dur:105,
+    venue:"Auditorium, Grande Bibliothèque", hood:"475 boul. De Maisonneuve E · métro Berri-UQAM", price:"$10",
+    url:"https://www.montrealseries.com/en/programme",
+    note:"Closing screening. The audience award and the festival's first acting prizes follow at 10 p.m." },
+  { day:"sun", cat:"film", title:"The Color of Pomegranates", sub:"VOSTA · Paradjanov, 1969", times:["20:45"], dur:78,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/films/details/the-color-of-pomegranates-coups-de-coeur-de-lequipe/" },
+  { day:"sun", cat:"film", title:"For a Few Dollars More", sub:"VA · Leone, 1965 · 2h10", times:["20:45"], dur:130,
+    venue:"Cinéma Moderne", hood:"Mile End · métro Laurier",
+    url:"https://www.cinemamoderne.com/en/schedule/" },
+  { day:"sun", cat:"theatre", title:"Ride the Cyclone", sub:"Not Safe For Magic Productions", times:[], bandHint:"afternoon", dur:110,
+    venue:"Centaur Theatre", hood:"Old Montreal · métro Place-d'Armes", price:"Ticketed",
+    url:"https://centaurtheatre.com/whats-on/",
+    note:"Sunday performance likely, time still not published — call the box office at 514-288-3161 before you set out." }
+];
+
+/* Out of town: half-day and full-day trips from Montreal. */
+var AFIELD = [
+  { id:"open-farms", cat:"market", title:"Portes ouvertes sur les fermes du Québec", url:"https://www.upa.qc.ca/citoyen/visiter-une-ferme/portes-ouvertes-sur-les-fermes-du-quebec",
+    region:"Farms across every region of Quebec", travel:"Montérégie 30–60 min · Laurentians 45–75 min · Lanaudière 45 min · pick a farm on the map first",
+    when:"Sunday 13 Sep only · 10 a.m. – 4 p.m.", free:true, trip:"Half day",
+    star:"Farms in every region of the province open their gates for this one day, free, with the producers themselves showing you round. It reaches well past the orchards — dairies, maple stands and market gardens that are shut the other 364 days of the year.",
+    note:"Free entry and free family activities at every participating farm, with picnic areas on site. The map on the UPA page is the only way to find who is taking part near you." },
+  { id:"vendanges", cat:"market", title:"Fête des Vendanges Magog-Orford", url:"https://www.fetedesvendanges.com/en",
+    region:"Pointe Merry, Magog · Eastern Townships", travel:"1h45 by car · Autoroute 10 East · Limocar coach from Montreal to Magog",
+    when:"Sat 12 & Sun 13 Sep · closing weekend", price:"Pass with tasting glass + coupons", trip:"Full day",
+    note:"More than seventy-five Quebec vineyards, cideries, distilleries, microbreweries and cheesemakers on the shore of Lake Memphremagog. This is the second and final weekend of the 2026 edition." },
+  { id:"eastman", cat:"theatre", title:"Les Correspondances d'Eastman", url:"https://lescorrespondances.ca/programmation-2026/",
+    region:"Eastman · Eastern Townships", travel:"1h20 by car · Autoroute 10 East, exit 106",
+    when:"Sun 13 Sep · 9:15 a.m. – 5 p.m., closing day", price:"Passeport or by the event", trip:"Full day",
+    note:"Twenty-fourth edition, on friendship. Today runs from a croissant-and-novel session at 9:15 through a writing workshop, a reading-performance at 12:30 and a film at 1:45, to the closing ceremony at 4:30. In French." },
+  { id:"lacroix", cat:"market", title:"Family weekend at the Lacroix orchard", url:"https://www.laurentides.com/en/events/",
+    region:"Saint-Joseph-du-Lac · Lower Laurentians", travel:"45 min by car · Autoroute 640 West — no transit, this one needs wheels",
+    when:"Sat 12 & Sun 13 Sep · 9 a.m. – 5 p.m.", price:"$4 site admission · picking extra", trip:"Half day",
+    note:"Opening fortnight of the picking season, with the orchard's own cider house on site. Cheaper and quieter than the Mont-Saint-Hilaire cluster on a race Sunday." },
+  { id:"bouquinistes", cat:"market", title:"Les Bouquinistes de Val-David", url:"https://valdavid.com/evenements/les-bouquinistes-de-val-david-1re-edition/",
+    region:"Val-David · Laurentians", travel:"1h15 by car · Autoroute 15 North · Galland coach from Montreal, then a short walk",
+    when:"Sat 12 & Sun 13 Sep", free:true, trip:"Half day",
+    note:"First edition: secondhand booksellers set out along the village's main street, at the trailhead of the P'tit Train du Nord. Times aren't published — the village calendar is the place to check." }
+];
+
+/* ============================================================
+   Bands: how a day actually divides when you're planning one.
+   ============================================================ */
+var BANDS = [
+  { id:"morning",   label:"Morning",       from:0,    to:11*60+59 },
+  { id:"afternoon", label:"Afternoon",     from:12*60, to:16*60+59 },
+  { id:"evening",   label:"Evening",       from:17*60, to:20*60+29 },
+  { id:"late",      label:"Late",          from:20*60+30, to:24*60+59 }
+];
+
+var CATMAP = {}; CATS.forEach(function(c){ CATMAP[c.id] = c; });
+var DAYMAP = {}; WEEKEND.days.forEach(function(d){ DAYMAP[d.key] = d; });
+var DAYKEYS = WEEKEND.days.map(function(d){ return d.key; });
+
+function mins(t){ var p = t.split(":"); return (+p[0])*60 + (+p[1]); }
+function fmt(t){
+  var p = t.split(":"), h = +p[0], m = p[1];
+  var ap = h >= 12 ? "p.m." : "a.m.";
+  var hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ":" + m + " " + ap;
+}
+function fmtShort(t){
+  var p = t.split(":"), h = +p[0], m = p[1];
+  var ap = h >= 12 ? "p" : "a";
+  var hh = h % 12; if (hh === 0) hh = 12;
+  return hh + ":" + m + ap;
+}
+function evId(e){
+  return e.day + "|" + e.cat + "|" + e.title.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+}
+function key(e, t){ return evId(e) + "@" + (t || "tba"); }
+function hideKeyOf(prefix, id){ return prefix + "|" + id; }
+/* A film with several showings renders one row per time band, and each row
+   hides on its own. The key therefore carries the showtimes in that row —
+   hiding the 2:15 must leave the 7:00 alone. */
+function rowTimes(e, band){
+  if (!e.times.length) return [];
+  return e.times.filter(function(t){ var m = mins(t); return m >= band.from && m <= band.to; });
+}
+function rowHideKey(e, band){
+  var ts = rowTimes(e, band);
+  return evId(e) + "@" + (ts.length ? ts.join(",") : "tba");
+}
+/* Pick keys that belong to a hidden row, so hiding drops only those. */
+function picksUnderHideKey(hk){
+  var at = hk.lastIndexOf("@");
+  if (at < 0) return [hk + "@tba"];              /* standing / afield cards */
+  var idPart = hk.slice(0, at), ts = hk.slice(at + 1);
+  if (ts === "tba") return [idPart + "@tba"];
+  return ts.split(",").map(function(t){ return idPart + "@" + t; });
+}
+function isHidden(k){ return !!hidden[k]; }
+function hiddenCount(){ return Object.keys(hidden).length; }
+/* Every document a snapshot delivers is frozen — the store owns it. Writing to
+   one throws "Attempted to assign to readonly property" under strict mode, which
+   rejects the read and looks exactly like a failed connection. Always copy first. */
+function thaw(o){
+  if (!o || typeof o !== "object") return {};
+  try { return JSON.parse(JSON.stringify(o)); } catch(e){ return {}; }
+}
+
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+/* ============================================================
+   State
+   ============================================================ */
+var picks = Object.create(null);     // key -> true
+var filters = {};                    // catId -> bool (true = shown)
+CATS.forEach(function(c){ filters[c.id] = true; });
+var freeOnly = false;
+var showAfield = true;
+var showHidden = false;
+var hidePast = false;
+var hidden = Object.create(null);
+var db = null, dbDoc = null, tasteDoc = null;
+var dbState = "connecting";   /* connecting | synced | local */
+var dbSyncedAt = null;
+var diag = { host: (window.claude && window.claude.use) ? "viewer" : "no window.claude",
+             db: "pending", sample: "pending", assets: "pending", lastError: "" };
+var LS = "mtl-weekend-" + WEEKEND.id;
+var TLS = "mtl-weekend-taste";
+
+/* What the board learns. Adds only — hiding something is never recorded,
+   because a hide usually means "already seen" or "busy that night", not
+   "not for me". The full listings are never filtered by any of this;
+   it only informs which three entries get starred at the next refresh. */
+var taste = null;
+
+function blankTaste(){
+  return { version:1, totalAdds:0, categories:{}, venues:{},
+           afieldAdds:0, freeAdds:0, ticketedAdds:0, recent:[], updatedAt:null };
+}
+function loadTasteLocal(){
+  try { var r = window.localStorage.getItem(TLS); if (r) taste = JSON.parse(r); } catch(e){}
+  if (!taste || typeof taste !== "object") taste = blankTaste();
+  if (!taste.categories) taste.categories = {};
+  if (!taste.venues) taste.venues = {};
+  if (!Array.isArray(taste.recent)) taste.recent = [];
+}
+function saveTaste(){
+  try { window.localStorage.setItem(TLS, JSON.stringify(taste)); } catch(e){}
+  if (tasteDoc) tasteDoc.set(taste).catch(function(){});
+  renderTasteNote();
+}
+function recordAdd(k){
+  var r = lookupKey(k);
+  if (!r) return;
+  var it = r.item;
+  var where = it.venue || it.region || "";
+  taste.totalAdds = (taste.totalAdds || 0) + 1;
+  taste.categories[it.cat] = (taste.categories[it.cat] || 0) + 1;
+  if (where) taste.venues[where] = (taste.venues[where] || 0) + 1;
+  if (r.away) taste.afieldAdds = (taste.afieldAdds || 0) + 1;
+  if (it.free) taste.freeAdds = (taste.freeAdds || 0) + 1;
+  else taste.ticketedAdds = (taste.ticketedAdds || 0) + 1;
+  taste.recent.unshift({
+    title: it.title, cat: it.cat, venue: where, sub: it.sub || "",
+    weekend: WEEKEND.id, time: r.time || "", at: new Date().toISOString()
+  });
+  taste.recent = taste.recent.slice(0, 60);
+  taste.updatedAt = new Date().toISOString();
+  saveTaste();
+}
+function renderTasteNote(){
+  var el = document.getElementById("taste-note");
+  if (!el) return;
+  var n = (taste && taste.totalAdds) || 0;
+  if (!n) {
+    el.innerHTML = "The three highlights at the top are tuned to what you add to your plans over time — " +
+      "two weighted to what you've picked before, one deliberately unlike any of it. " +
+      "Hidden entries are never counted, and the listings below are never filtered by any of it.";
+    return;
+  }
+  el.innerHTML = "Highlights are tuned to the " + n + " thing" + (n === 1 ? "" : "s") +
+    " you've added so far — hidden entries are never counted, and the listings are never filtered by it. " +
+    '<button class="lnk" id="taste-reset" type="button">Forget my picks</button>';
+  var b = document.getElementById("taste-reset");
+  if (b) b.addEventListener("click", function(){
+    taste = blankTaste(); saveTaste(); toast("Highlight history cleared");
+  });
+}
+
+function loadLocal(){
+  try {
+    var raw = window.localStorage.getItem(LS);
+    if (raw) {
+      var o = JSON.parse(raw);
+      if (o && o.picks) picks = o.picks;
+      if (o && o.hidden) hidden = o.hidden;
+    }
+  } catch(e){}
+}
+function saveLocal(){
+  try { window.localStorage.setItem(LS, JSON.stringify({picks:picks, hidden:hidden})); } catch(e){}
+}
+function saveRemote(){
+  if (!dbDoc) return;
+  dbDoc.set({ picks: picks, hidden: hidden, savedAt: new Date().toISOString() }).catch(function(){});
+}
+function persist(){ saveLocal(); saveRemote(); }
+
+
+/* ============================================================
+   Posters spotted around town.
+   Each record is a db document under "spotted". It shows on the
+   board the weekend it happens, sits in "Coming up" until then,
+   and is pruned once it's over.
+   ============================================================ */
+var spotted = [];          // array of records
+var spottedCol = null;     // db collection ref
+var sampleFn = null, sampleCaps = null, assetsNs = null;
+var SLS = "mtl-weekend-spotted";
+
+function loadSpottedLocal(){
+  try {
+    var r = window.localStorage.getItem(SLS);
+    if (r) spotted = JSON.parse(r) || [];
+  } catch(e){ spotted = []; }
+  if (!Array.isArray(spotted)) spotted = [];
+}
+function saveSpottedLocal(){
+  try { window.localStorage.setItem(SLS, JSON.stringify(spotted)); } catch(e){}
+}
+function putSpotted(rec){
+  var i = -1;
+  for (var j=0;j<spotted.length;j++) if (spotted[j].id === rec.id) { i = j; break; }
+  if (i >= 0) spotted[i] = rec; else spotted.push(rec);
+  saveSpottedLocal();
+  if (spottedCol) spottedCol.doc(rec.id).set(rec).catch(function(){});
+}
+function dropSpotted(id){
+  spotted = spotted.filter(function(r){ return r.id !== id; });
+  saveSpottedLocal();
+  if (spottedCol) spottedCol.doc(id).delete().catch(function(){});
+}
+function newId(){
+  return "p" + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function dayKeyForDate(iso){
+  for (var i=0;i<WEEKEND.days.length;i++) if (WEEKEND.days[i].date === iso) return WEEKEND.days[i].key;
+  return null;
+}
+function weekendSpan(){
+  return { from: WEEKEND.days[0].date, to: WEEKEND.days[WEEKEND.days.length-1].date };
+}
+function prettyDate(iso){
+  if (!iso) return "date unknown";
+  var p = iso.split("-");
+  var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2]));
+  return d.toLocaleDateString("en-CA", { weekday:"short", day:"numeric", month:"short", timeZone:"UTC" });
+}
+function daysUntil(iso){
+  if (!iso) return null;
+  var p = iso.split("-"), t = todayISO().split("-");
+  var a = Date.UTC(+p[0], +p[1]-1, +p[2]), b = Date.UTC(+t[0], +t[1]-1, +t[2]);
+  return Math.round((a - b) / 86400000);
+}
+function countdown(iso){
+  var n = daysUntil(iso);
+  if (n === null) return "no date on the poster";
+  if (n < 0) return "already past";
+  if (n === 0) return "today";
+  if (n === 1) return "tomorrow";
+  if (n < 14) return "in " + n + " days";
+  if (n < 60) return "in " + Math.round(n/7) + " weeks";
+  return "in " + Math.round(n/30) + " months";
+}
+
+/* A record shaped like a board entry. */
+/* Captured posters the page could not read: held out of the board, shown in
+   their own holding pen so a save never looks like it vanished. */
+function pendingSpotted(){
+  return spotted.filter(function(r){
+    return r.needsRead && r.status !== "rejected";
+  }).sort(function(a,b){
+    return (a.capturedAt || "") < (b.capturedAt || "") ? 1 : -1;
+  });
+}
+
+function spottedAsEvent(rec, dayKey){
+  return {
+    day: dayKey, cat: rec.cat, title: rec.title, sub: rec.sub || "",
+    times: rec.time ? [rec.time] : [], bandHint: rec.time ? null : "evening",
+    dur: rec.dur || 120,
+    venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
+    url: rec.url || "", note: rec.note || "",
+    free: !!rec.free, price: rec.free ? null : (rec.price || "From a poster"),
+    spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
+  };
+}
+function spottedAsStanding(rec){
+  var from = rec.startDate, to = rec.endDate || rec.startDate;
+  return {
+    id: "spot-" + rec.id, cat: rec.cat, title: rec.title, url: rec.url || "",
+    venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
+    when: prettyDate(from) + (to && to !== from ? " – " + prettyDate(to) : ""),
+    free: !!rec.free, price: rec.free ? null : (rec.price || "From a poster"),
+    note: rec.note || "", spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
+  };
+}
+/* Split the store into: this weekend's timed entries, this weekend's
+   multi-day runs, and everything still ahead. */
+function splitSpotted(){
+  var span = weekendSpan(), out = { events: [], standing: [], coming: [] };
+  spotted.forEach(function(rec){
+    if (rec.status === "rejected") return;
+    if (rec.needsRead) return;        /* held back until the poster has been read */
+    var from = rec.startDate, to = rec.endDate || rec.startDate;
+    if (!from) { out.coming.push(rec); return; }
+    if (to < span.from) return;                       /* over and done */
+    if (from > span.to) { out.coming.push(rec); return; }
+    var dk = dayKeyForDate(from);
+    if (from === to && dk) out.events.push(spottedAsEvent(rec, dk));
+    else if (from === to && !dk) out.coming.push(rec); /* mid-week: not this weekend */
+    else out.standing.push(spottedAsStanding(rec));
+  });
+  out.coming.sort(function(a,b){ return (a.startDate||"9999") < (b.startDate||"9999") ? -1 : 1; });
+  return out;
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+var elControls = document.getElementById("controls");
+var elStanding = document.getElementById("standing");
+var elStandingGrid = document.getElementById("standing-grid");
+var elDays = document.getElementById("days");
+var elStamp = document.getElementById("stamp");
+var elHl = document.getElementById("hl");
+var elHlGrid = document.getElementById("hl-grid");
+var elAfield = document.getElementById("afield");
+var elAfieldGrid = document.getElementById("afield-grid");
+
+function renderStamp(){
+  /* called again after the captured store loads */
+  var u = new Date(WEEKEND.updated);
+  var d = u.toLocaleDateString("en-CA", { month:"short", day:"numeric", timeZone:"America/Toronto" });
+  var t = u.toLocaleTimeString("en-CA", { hour:"numeric", minute:"2-digit", timeZone:"America/Toronto" });
+  var sp = splitSpotted();
+  var n = EVENTS.reduce(function(a,e){ return a + Math.max(1, e.times.length); }, 0) +
+          STANDING.length + AFIELD.length + sp.events.length + sp.standing.length;
+  var sync;
+  if (dbState === "synced") {
+    sync = 'saved items synced ' + esc(dbSyncedAt || "");
+  } else if (dbState === "local") {
+    sync = 'offline — showing this device\u2019s copy · <button class="diagbtn" id="diag-retry">retry</button>' +
+           ' · <button class="diagbtn" id="diag-why">why</button>';
+  } else {
+    sync = 'syncing saved items\u2026';
+  }
+  elStamp.setAttribute("data-sync", dbState);
+  elStamp.innerHTML =
+    '<b>' + esc(WEEKEND.label) + '</b><br>' +
+    n + ' listings · refreshed ' + esc(d) + ', ' + esc(t) + '<br>' +
+    '<span id="sync-line">' + sync + '</span>' +
+    '<div id="diag-out" hidden></div>';
+  var rb = document.getElementById("diag-retry");
+  if (rb) rb.addEventListener("click", function(){
+    dbState = "connecting"; renderStamp(); connectStore(true);
+  });
+  var wb = document.getElementById("diag-why");
+  if (wb) wb.addEventListener("click", function(){
+    var out = document.getElementById("diag-out");
+    out.hidden = !out.hidden;
+    out.textContent =
+      "host:    " + diag.host + "\n" +
+      "db:      " + diag.db + "\n" +
+      "sample:  " + diag.sample + "\n" +
+      "assets:  " + diag.assets + (diag.lastError ? "\nlast err: " + diag.lastError : "");
+  });
+}
+
+function renderControls(){
+  var html = "";
+  CATS.forEach(function(c){
+    html += '<button class="chip" data-cat="' + c.id + '" style="--catc:' + c.color + '" aria-pressed="true">' +
+            '<span class="dot"></span>' + esc(c.label) + '</button>';
+  });
+  html += '<span class="ctrl-sep" aria-hidden="true"></span>';
+  html += '<button class="chip" id="chip-free" aria-pressed="false">Free only</button>';
+  html += '<button class="chip" id="chip-afield" aria-pressed="true">Out of town</button>';
+  html += '<button class="chip" id="chip-past" aria-pressed="false" hidden>Hide what\u2019s over</button>';
+  html += '<button class="chip" id="chip-hidden" aria-pressed="false" hidden>Hidden</button>';
+  html += '<button class="chip action" id="chip-capture">+ Add a poster</button>';
+  html += '<button class="chip" id="chip-all" aria-pressed="false">Reset</button>';
+  html += '<span class="ctrl-note" id="ctrl-note"></span>';
+  elControls.innerHTML = html;
+
+  elControls.querySelectorAll("[data-cat]").forEach(function(b){
+    b.addEventListener("click", function(){
+      var id = b.getAttribute("data-cat");
+      var solo = CATS.every(function(c){ return c.id === id ? filters[c.id] : !filters[c.id]; });
+      if (solo) { CATS.forEach(function(c){ filters[c.id] = true; }); }
+      else { filters[id] = !filters[id]; }
+      renderAll();
+    });
+  });
+  document.getElementById("chip-free").addEventListener("click", function(){
+    freeOnly = !freeOnly; renderAll();
+  });
+  document.getElementById("chip-afield").addEventListener("click", function(){
+    showAfield = !showAfield; renderAll();
+  });
+  document.getElementById("chip-past").addEventListener("click", function(){
+    hidePast = !hidePast; renderAll();
+  });
+  document.getElementById("chip-hidden").addEventListener("click", function(){
+    showHidden = !showHidden; renderAll();
+  });
+  document.getElementById("chip-capture").addEventListener("click", function(){ capOpen(null); });
+  document.getElementById("f-cat").innerHTML = CATS.map(function(c){
+    return '<option value="' + c.id + '">' + esc(c.label) + '</option>';
+  }).join("");
+  document.getElementById("chip-all").addEventListener("click", function(){
+    CATS.forEach(function(c){ filters[c.id] = true; });
+    freeOnly = false; showAfield = true; showHidden = false; hidePast = false; renderAll();
+  });
+}
+
+function syncControls(){
+  elControls.querySelectorAll("[data-cat]").forEach(function(b){
+    b.setAttribute("aria-pressed", filters[b.getAttribute("data-cat")] ? "true" : "false");
+  });
+  document.getElementById("chip-free").setAttribute("aria-pressed", freeOnly ? "true" : "false");
+  document.getElementById("chip-afield").setAttribute("aria-pressed", showAfield ? "true" : "false");
+  var overCount = 0;
+  EVENTS.concat(splitSpotted().events).forEach(function(e){
+    BANDS.forEach(function(b){
+      if (rowTimes(e, b).length && rowState(e, b) === "over") overCount++;
+    });
+  });
+  var chipP = document.getElementById("chip-past");
+  chipP.hidden = overCount === 0;
+  chipP.setAttribute("aria-pressed", hidePast ? "true" : "false");
+  chipP.textContent = hidePast ? ("Showing what\u2019s ahead") : (overCount + " already over — hide");
+
+  var hc = hiddenCount(), chipH = document.getElementById("chip-hidden");
+  chipH.hidden = hc === 0;
+  chipH.setAttribute("aria-pressed", showHidden ? "true" : "false");
+  chipH.textContent = showHidden ? ("Hiding " + hc + " — done") : (hc + " hidden — show");
+  var off = CATS.filter(function(c){ return !filters[c.id]; }).length;
+  document.getElementById("ctrl-note").textContent =
+    (off || freeOnly || !showAfield || hidePast) ? "filtered" : "";
+}
+
+function passes(e, hk){
+  if (hk && isHidden(hk) && !showHidden) return false;
+  if (!filters[e.cat]) return false;
+  if (freeOnly && !e.free) return false;
+  return true;
+}
+
+function tagsFor(e){
+  var c = CATMAP[e.cat];
+  var h = '<span class="tag cat" style="--catc:' + c.color + '">' + esc(c.label) + '</span>';
+  if (e.free) h += '<span class="tag free">Free</span>';
+  else if (e.price) h += '<span class="tag price">' + esc(e.price) + '</span>';
+  if (e.spotted) {
+    h += '<span class="tag poster">From a poster</span>';
+    if (e.status !== "verified") h += '<span class="tag unver">Not checked yet</span>';
+  }
+  return h;
+}
+
+function cardHtml(item, prefix){
+  var k = prefix + "|" + item.id + "@tba";
+  var hk = hideKeyOf(prefix, item.id);
+  var off = isHidden(hk);
+  var on = !!picks[k];
+  var where = item.venue || item.region || "";
+  return '<article class="run' + (off ? ' is-hidden' : '') + '" style="--catc:' + CATMAP[item.cat].color + '">' +
+    '<h3 class="rtitle"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a></h3>' +
+    '<p class="rmeta"><span class="mono" style="font-size:12px">' + esc(item.when) + '</span><br>' +
+    esc(where) + (item.hood ? ' <span class="hood">· ' + esc(item.hood) + '</span>' : '') + '</p>' +
+    (item.travel ? '<p class="rtravel">' + esc(item.travel) + '</p>' : '') +
+    (item.note ? '<p class="ev-note" style="margin:0">' + esc(item.note) + '</p>' : '') +
+    '<div class="rfoot">' + tagsFor(item) +
+    (item.trip ? '<span class="tag price">' + esc(item.trip) + '</span>' : '') +
+    (off
+      ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
+      : '<button class="pickbtn" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '">' + (on ? 'On the plan' : 'Add') + '</button>') +
+    '<span class="card-foot-r">' +
+      (off ? '' : '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Hide this" aria-label="Hide ' + esc(item.title) + '">✕</button>') +
+    '</span></div>' +
+    '</article>';
+}
+
+function renderStandingStrip(){
+  var all = STANDING.concat(splitSpotted().standing);
+  var items = all.filter(function(x){ return passes(x, hideKeyOf("standing", x.id)); });
+  if (!items.length) { elStanding.hidden = true; return; }
+  elStanding.hidden = false;
+  elStandingGrid.innerHTML = items.map(function(x){ return cardHtml(x, "standing"); }).join("");
+}
+
+function renderAfieldStrip(){
+  var items = showAfield ? AFIELD.filter(function(x){ return passes(x, hideKeyOf("afield", x.id)); }) : [];
+  if (!items.length) { elAfield.hidden = true; return; }
+  elAfield.hidden = false;
+  elAfieldGrid.innerHTML = items.map(function(x){ return cardHtml(x, "afield"); }).join("");
+}
+
+function renderPending(){
+  var el = document.getElementById("pending"), grid = document.getElementById("pending-grid");
+  var items = pendingSpotted();
+  if (!items.length) { el.hidden = true; return; }
+  el.hidden = false;
+  grid.innerHTML = items.map(function(r){
+    var src = r.photoData || (r.photoId ? "/_blob/" + r.photoId : "");
+    var when = r.capturedAt ? new Date(r.capturedAt).toLocaleDateString("en-CA",
+      { weekday:"short", day:"numeric", month:"short", timeZone:"America/Toronto" }) : "";
+    var name = (r.title && r.title !== "Untitled event") ? r.title : "Unread poster";
+    return '<article class="soon waiting">' +
+      (src ? '<img class="thumb" src="' + esc(src) + '" alt="The poster you photographed">' : '') +
+      '<span class="away">' + esc(when ? "photographed " + when : "photographed") + '</span>' +
+      '<h3>' + esc(name) + '</h3>' +
+      '<p class="when">' + esc(r.startDate ? prettyDate(r.startDate) : "no date read yet") + '</p>' +
+      '<div class="rfoot">' +
+      '<span class="tag poster">From a poster</span>' +
+      '<span class="tag unver">Queued for the morning</span>' +
+      '<button class="editbtn" data-editrec="' + esc(r.id) + '">Fill in now</button>' +
+      '</div></article>';
+  }).join("");
+}
+
+function renderComing(){
+  var el = document.getElementById("coming"), grid = document.getElementById("coming-grid");
+  var items = splitSpotted().coming;
+  if (!items.length) { el.hidden = true; return; }
+  el.hidden = false;
+  grid.innerHTML = items.map(function(r){
+    var c = CATMAP[r.cat] || CATMAP.fest;
+    var to = r.endDate && r.endDate !== r.startDate ? " – " + prettyDate(r.endDate) : "";
+    return '<article class="soon" style="--catc:' + c.color + '">' +
+      (r.photoId ? '<img class="thumb" src="/_blob/' + esc(r.photoId) + '" alt="">' : '') +
+      '<span class="away">' + esc(countdown(r.startDate)) + '</span>' +
+      '<h3>' + (r.url
+        ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="color:inherit">' + esc(r.title) + '</a>'
+        : esc(r.title)) + '</h3>' +
+      '<p class="when">' + esc(prettyDate(r.startDate) + to) + (r.time ? " · " + esc(fmt(r.time)) : "") + '</p>' +
+      '<p class="rmeta">' + esc(r.venue || "Venue on the poster") + (r.hood ? ' <span class="hood">· ' + esc(r.hood) + '</span>' : '') + '</p>' +
+      (r.note ? '<p class="ev-note" style="margin:0">' + esc(r.note) + '</p>' : '') +
+      '<div class="rfoot">' + tagsFor(r) +
+      '<button class="editbtn" data-editrec="' + esc(r.id) + '">Edit</button></div>' +
+      '</article>';
+  }).join("");
+}
+
+function renderHighlights(){
+  var picksList = [];
+  STANDING.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("standing", x.id))) picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), when:x.when, where:x.venue}); });
+  AFIELD.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("afield", x.id))) picksList.push({item:x, k:"afield|" + x.id + "@tba", hk:hideKeyOf("afield", x.id), when:x.when, where:x.region}); });
+  EVENTS.forEach(function(e){
+    if (!e.star || isHidden(evId(e))) return;
+    /* a starred entry names one showtime; hiding another of its rows is not
+       a reason to drop it from the panel */
+    var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
+    picksList.push({
+      item:e, k:key(e,t), hk:evId(e),
+      when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
+      where:e.venue + (e.hood ? " · " + e.hood : "")
+    });
+  });
+  /* a captured poster can earn a highlight slot too */
+  var sp = splitSpotted();
+  sp.standing.forEach(function(x){
+    if (x.star && !isHidden(hideKeyOf("standing", x.id)))
+      picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), when:x.when, where:x.venue});
+  });
+  sp.events.forEach(function(e){
+    if (!e.star || isHidden(evId(e))) return;
+    var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
+    picksList.push({ item:e, k:key(e,t), hk:evId(e),
+      when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
+      where:e.venue + (e.hood ? " · " + e.hood : "") });
+  });
+  picksList = picksList.slice(0,3);
+  if (!picksList.length) { elHl.hidden = true; return; }
+  elHl.hidden = false;
+  elHlGrid.innerHTML = picksList.map(function(p){
+    var c = CATMAP[p.item.cat], on = !!picks[p.k];
+    return '<article class="hl-card" style="--catc:' + c.color + '">' +
+      '<span class="hl-cat">' + esc(c.label) + (p.item.free ? ' · Free' : '') + '</span>' +
+      '<h3 class="hl-title"><a href="' + esc(p.item.url) + '" target="_blank" rel="noopener">' + esc(p.item.title) + '</a></h3>' +
+      '<p class="hl-when">' + esc(p.when) + '<br>' + esc(p.where) + '</p>' +
+      '<p class="hl-why">' + esc(p.item.star) + '</p>' +
+      '<div style="display:flex;gap:8px;align-items:center;margin-top:auto">' +
+      '<button class="pickbtn" style="margin-top:0" data-pick="' + esc(p.k) + '" aria-pressed="' + (on?'true':'false') + '">' +
+      (on ? 'On the plan' : 'Add to plan') + '</button>' +
+      '<button class="hidebtn" data-hide="' + esc(p.hk) + '" title="Hide this" aria-label="Hide ' + esc(p.item.title) + '">✕</button>' +
+      '</div></article>';
+  }).join("");
+}
+
+function renderDays(){
+  elDays.innerHTML = WEEKEND.days.map(function(d){
+    var pool = EVENTS.concat(splitSpotted().events);
+    var todays = pool.filter(function(e){ return e.day === d.key && passes(e); });
+    var total = todays.reduce(function(a,e){ return a + Math.max(1, e.times.length); }, 0);
+    var isToday = d.date === todayISO();
+
+    var bandsHtml = BANDS.map(function(b){
+      var inBand = todays.filter(function(e){
+        var here = e.times.length
+          ? e.times.some(function(t){ var m = mins(t); return m >= b.from && m <= b.to; })
+          : (e.bandHint || "evening") === b.id;
+        if (!here) return false;
+        if (showHidden) return true;
+        /* the row's own key, plus the pre-v16 whole-event key for anything
+           hidden before hiding became per-showtime */
+        return !isHidden(rowHideKey(e, b)) && !isHidden(evId(e));
+      }).sort(function(a,c){
+        return firstIn(a,b) - firstIn(c,b);
+      });
+      if (hidePast) inBand = inBand.filter(function(e){ return rowState(e, b) !== "over"; });
+      if (!inBand.length) return "";
+      var n = isToday ? nowMins() : -1;
+      var placed = false;
+      var rows = inBand.map(function(e){
+        var html = "";
+        if (isToday && !placed && n >= b.from && n <= b.to) {
+          var ts = rowTimes(e, b).map(mins);
+          if (ts.length && Math.min.apply(null, ts) > n) {
+            var nh = Math.floor(n / 60), nm = n % 60;
+            var nowStr = (nh < 10 ? "0" : "") + nh + ":" + (nm < 10 ? "0" : "") + nm;
+            html += '<div class="nowline"><span>now · ' + esc(fmt(nowStr)) + '</span></div>';
+            placed = true;
+          }
+        }
+        return html + rowHtml(e, b);
+      }).join("");
+      return '<div class="band"><p class="band-label">' + esc(b.label) +
+             '<span class="bct">' + inBand.length + '</span></p>' + rows + '</div>';
+    }).join("");
+
+    if (!total) bandsHtml = '<p class="empty-band">Nothing matches the current filters on ' + esc(d.name) + '.</p>';
+
+    var dayDone = d.date < todayISO();
+    return '<section class="day' + (dayDone ? ' is-done' : '') + '">' +
+      '<div class="day-head"><span class="dnum">' + esc(d.name) + '</span>' +
+      (isToday ? '<span class="today-flag">Today</span>' : '') +
+      '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span></div>' +
+      bandsHtml + '</section>';
+  }).join("");
+}
+
+function firstIn(e, band){
+  if (!e.times.length) return band.from;
+  var m = e.times.map(mins).filter(function(x){ return x >= band.from && x <= band.to; });
+  return m.length ? Math.min.apply(null, m) : band.to;
+}
+
+function rowHtml(e, band){
+  var times = e.times.filter(function(t){
+    var m = mins(t); return m >= band.from && m <= band.to;
+  });
+  var picked = (e.times.length ? e.times : [null]).some(function(t){ return picks[key(e,t)]; });
+
+  var state = rowState(e, band);
+  var whenCell = e.times.length
+    ? '<div class="ev-when">' + esc(fmt(times[0])) + '</div>'
+    : '<div class="ev-when tba">time&nbsp;TBC</div>';
+
+  var body = '<div class="ev-body">';
+  var drop = isDropIn(e);
+  var stateTag = state === "over"
+    ? '<span class="tag over">Over</span>'
+    : state === "now"
+      ? (drop ? '<span class="tag onnow">On now</span>'
+              : '<span class="tag live">' + esc(sinceLabel(e, band)) + '</span>')
+      : '';
+  body += '<h3 class="ev-title"><a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.title) + '</a>' + stateTag + tagsFor(e) + '</h3>';
+  if (e.sub) body += '<p class="ev-note" style="margin:0">' + esc(e.sub) + '</p>';
+  body += '<p class="ev-venue">' + esc(e.venue) + (e.hood ? ' <span class="hood">· ' + esc(e.hood) + '</span>' : '') + '</p>';
+  if (e.note) body += '<p class="ev-note" style="margin:0">' + esc(e.note) + '</p>';
+
+  if (isHidden(rowHideKey(e, band)) || isHidden(evId(e))) {
+    body += '<p class="ev-note" style="margin:0">Hidden from your board.</p>';
+  } else if (times.length === 1) {
+    var k1 = key(e, times[0]), on1 = !!picks[k1];
+    body += '<button class="pickbtn' + (isPast(e.day, times[0]) ? ' past' : '') + '" data-pick="' + esc(k1) +
+            '" aria-pressed="' + (on1?'true':'false') + '">' + (on1 ? 'On the plan' : 'Add') + '</button>';
+  } else if (times.length) {
+    body += '<div class="times">' + times.map(function(t){
+      var k = key(e,t), on = !!picks[k];
+      var past = isPast(e.day, t) ? " past" : "";
+      return '<button class="tbtn' + past + '" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '" ' +
+             'title="' + (on ? 'Remove from itinerary' : 'Add to itinerary') + '">' + esc(fmt(t)) + '</button>';
+    }).join("") + '</div>';
+  } else {
+    var k0 = key(e,null), on0 = !!picks[k0];
+    body += '<button class="pickbtn" data-pick="' + esc(k0) + '" aria-pressed="' + (on0?'true':'false') + '">' +
+            (on0 ? 'On the plan' : 'Add anyway') + '</button>';
+  }
+  body += '</div>';
+
+  var hk = rowHideKey(e, band);
+  var off = isHidden(hk) || isHidden(evId(e));
+  if (isHidden(evId(e)) && !isHidden(hk)) hk = evId(e);   /* legacy key */
+  var ctl = off
+    ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
+    : (e.recId ? '<button class="editbtn" data-editrec="' + esc(e.recId) + '" style="margin-right:4px">Edit</button>' : '') +
+      '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Hide this" aria-label="Hide ' + esc(e.title) + '">✕</button>';
+  return '<div class="ev' + (picked ? ' picked' : '') + (off ? ' is-hidden' : '') +
+         (state === "over" ? ' is-over' : (state === "now" && !drop) ? ' is-live' : '') + '">' +
+         whenCell + body + '<div>' + ctl + '</div></div>';
+}
+
+function todayISO(){
+  var f = new Date().toLocaleDateString("en-CA", { timeZone:"America/Toronto" });
+  return f;
+}
+function nowMins(){
+  return mins(new Date().toLocaleTimeString("en-GB",
+    { timeZone:"America/Toronto", hour:"2-digit", minute:"2-digit" }));
+}
+/* A scheduled thing has a curtain: miss the start and you have missed it —
+   films, plays, dance, a gig with a support act. A drop-in runs a window you
+   can walk into — a market, a festival site, a day party, the drum circle.
+   Only the first kind is worth flagging as started. `dropIn` on the entry
+   settles it outright; otherwise infer from category and length. */
+function isDropIn(e){
+  if (typeof e.dropIn === "boolean") return e.dropIn;
+  if (e.cat === "film" || e.cat === "theatre" || e.cat === "dance") return false;
+  if (e.cat === "music") return (e.dur || 120) >= 240;   /* a day party, not a gig */
+  return true;                                            /* fest, market, museum */
+}
+
+/* "future" | "now" (started, probably still running) | "over" */
+function rowState(e, band){
+  var d = DAYMAP[e.day];
+  if (!d) return "future";
+  var today = todayISO();
+  if (d.date > today) return "future";
+  if (d.date < today) return "over";
+  var ts = rowTimes(e, band).map(mins);
+  if (!ts.length) return "future";              /* no published time — never called past */
+  var start = Math.min.apply(null, ts), last = Math.max.apply(null, ts);
+  var n = nowMins();
+  if (n < start) return "future";
+  if (n < last + (e.dur || 120)) return "now";
+  return "over";
+}
+function sinceLabel(e, band){
+  var ts = rowTimes(e, band).map(mins);
+  var start = Math.min.apply(null, ts);
+  var m = nowMins() - start;
+  if (m < 1) return "starting now";
+  if (m < 60) return "started " + m + " min ago";
+  var h = Math.floor(m / 60), r = m % 60;
+  return "started " + h + "h" + (r ? " " + r + "m" : "") + " ago";
+}
+
+function isPast(dayKey, t){
+  var d = DAYMAP[dayKey]; if (!d) return false;
+  var today = todayISO();
+  if (d.date < today) return true;
+  if (d.date > today) return false;
+  var nowStr = new Date().toLocaleTimeString("en-GB", { timeZone:"America/Toronto", hour:"2-digit", minute:"2-digit" });
+  return t < nowStr;
+}
+
+/* ============================================================
+   Itinerary
+   ============================================================ */
+function lookupKey(k){
+  var at = k.lastIndexOf("@");
+  var idPart = k.slice(0, at), t = k.slice(at+1);
+  if (idPart.indexOf("standing|") === 0 || idPart.indexOf("afield|") === 0) {
+    var isAway = idPart.indexOf("afield|") === 0;
+    var pool = isAway ? AFIELD : STANDING;
+    var sid = idPart.slice(idPart.indexOf("|") + 1);
+    var found = pool.filter(function(x){ return x.id === sid; })[0];
+    if (!found) return null;
+    return { kind:"standing", item:found, time:null, day:null, away:isAway };
+  }
+  for (var i=0;i<EVENTS.length;i++){
+    if (evId(EVENTS[i]) === idPart) {
+      return { kind:"event", item:EVENTS[i], time: t === "tba" ? null : t, day: EVENTS[i].day };
+    }
+  }
+  return null;
+}
+
+function planRows(){
+  var rows = Object.keys(picks).map(lookupKey).filter(Boolean);
+  var out = { standing:[] };
+  DAYKEYS.forEach(function(k){ out[k] = []; });
+  rows.forEach(function(r){
+    if (r.kind === "standing" || !out[r.day]) out.standing.push(r);
+    else out[r.day].push(r);
+  });
+  DAYKEYS.forEach(function(d){
+    out[d].sort(function(a,b){
+      if (!a.time) return 1; if (!b.time) return -1;
+      return mins(a.time) - mins(b.time);
+    });
+  });
+  return out;
+}
+function planCount(p){
+  return DAYKEYS.reduce(function(a,k){ return a + p[k].length; }, p.standing.length);
+}
+
+function renderPlan(){
+  var p = planRows();
+  var n = planCount(p);
+  var elBody = document.getElementById("drawer-body");
+
+  document.getElementById("dcount").textContent = n;
+  document.getElementById("dlabel").textContent = n === 0 ? "nothing picked yet" : (n === 1 ? "thing on your plan" : "things on your plan");
+  ["btn-copy","btn-clear"].forEach(function(id){ document.getElementById(id).disabled = (n === 0); });
+
+  if (n === 0) {
+    elBody.innerHTML = '<div class="plan"><p class="plan-empty">Tick a showtime — or <b>Add</b> on a highlight, something running all weekend, or a trip out of town — and it lands here in order, with the gaps between one thing and the next worked out for you.</p></div>';
+    return;
+  }
+
+  var html = '<div class="plan">';
+  if (p.standing.length) {
+    html += '<div class="plan-day"><h3>Any time this weekend · trips</h3>' +
+      p.standing.map(function(r){
+        return slotHtml(r.away ? "trip" : "—", r,
+          (r.item.venue || r.item.region) + " · " + r.item.when,
+          (r.away ? "afield|" : "standing|") + r.item.id + "@tba");
+      }).join("") + '</div>';
+  }
+  DAYKEYS.forEach(function(dk){
+    if (!p[dk].length) return;
+    var d = DAYMAP[dk];
+    html += '<div class="plan-day"><h3>' + esc(d.name) + ' ' + esc(d.num.replace(/^\w+\s/,"")) + '</h3>';
+    p[dk].forEach(function(r, i){
+      var prev = p[dk][i-1];
+      if (prev && prev.time && r.time) {
+        var end = mins(prev.time) + (prev.item.dur || 120);
+        var g = mins(r.time) - end;
+        if (g < 0) {
+          html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(prev.item.title) +
+                  ' by about ' + Math.abs(g) + ' min — one of these has to go</span></div>';
+        } else if (g === 0) {
+          html += '<div class="gap clash"><span></span><span>back to back — no travel time at all</span></div>';
+        } else if (g < 30) {
+          html += '<div class="gap clash"><span></span><span>' + g + ' min to get across town — tight</span></div>';
+        } else {
+          html += '<div class="gap"><span></span><span>' + fmtGap(g) + ' free</span></div>';
+        }
+      }
+      html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue + (r.item.hood ? " · " + r.item.hood : ""), key(r.item, r.time));
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  elBody.innerHTML = html;
+}
+
+function fmtGap(m){
+  if (m < 60) return m + " min";
+  var h = Math.floor(m/60), r = m % 60;
+  return h + "h" + (r ? " " + r + "m" : "");
+}
+
+function slotHtml(time, r, where, k){
+  var item = r.item;
+  var over = false;
+  if (r.time && r.day && DAYMAP[r.day]) {
+    var dd = DAYMAP[r.day].date, td = todayISO();
+    over = dd < td || (dd === td && nowMins() > mins(r.time) + (item.dur || 120));
+  }
+  return '<div class="slot' + (over ? ' is-over' : '') + '">' +
+    '<span class="stime">' + esc(time) + '</span>' +
+    '<span><span class="sname"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a></span><br>' +
+    '<span class="swhere">' + esc(where) + '</span></span>' +
+    '<span class="sdrop">' +
+      '<a class="calbtn" href="' + esc(gcalUrl(r)) + '" target="_blank" rel="noopener" ' +
+      'title="Add ' + esc(item.title) + ' to Google Calendar">+ Calendar</a>' +
+      '<button class="xbtn" data-pick="' + esc(k) + '" aria-label="Remove ' + esc(item.title) + ' from itinerary">×</button>' +
+    '</span>' +
+    '</div>';
+}
+
+
+/* ============================================================
+   Capture: photograph a poster, read it, check it, keep it.
+   ============================================================ */
+var capFile = null, capEditing = null, capAbort = null;
+var samplePromise = null;   /* resolves to the sample fn, or null */
+var capParsed = false;      /* did the page manage to read this photo itself? */
+
+var POSTER_PROMPT_HEAD =
+  "This is a photograph of a poster, flyer or handbill for an event in or near Montreal, Quebec. " +
+  "Read what the poster actually says and pull out the event details.\n\n" +
+  "Rules:\n" +
+  "- Never invent a detail. If something is not printed on the poster, use null.\n" +
+  "- A date with no year means the next time that date occurs after today.\n" +
+  "- Times are 24-hour, \"HH:MM\".\n" +
+  "- A run of several days gives a startDate and a later endDate; a one-night event gives the same date for both.\n" +
+  "- Posters are often in French. Translate the title only if the poster itself gives an English title; otherwise keep it as printed.\n\n" +
+  "Reply with only a JSON object of this shape:\n" +
+  '{"title":string,"sub":string|null,"cat":"theatre"|"film"|"music"|"dance"|"museum"|"fest"|"market",' +
+  '"startDate":"YYYY-MM-DD"|null,"endDate":"YYYY-MM-DD"|null,"time":"HH:MM"|null,' +
+  '"venue":string|null,"address":string|null,"price":string|null,"free":boolean,' +
+  '"url":string|null,"language":string|null,"confidence":"high"|"medium"|"low","unreadable":[string]}';
+
+function capOpen(rec){
+  capEditing = rec || null;
+  capFile = null; capParsed = false;
+  document.getElementById("cap-overlay").hidden = false;
+  document.getElementById("cap-warn").hidden = true;
+  var drop = document.getElementById("cap-drop");
+  var shot = document.getElementById("cap-shot");
+  var st = document.getElementById("cap-status");
+  st.className = "cap-status"; st.textContent = "";
+  document.getElementById("cap-file").value = "";
+  document.getElementById("cap-lib").value = "";
+  document.getElementById("cap-h").textContent = rec ? "Edit this event" : "Add a poster";
+  document.getElementById("cap-lede").textContent = rec
+    ? "Fix anything that came out wrong. The board updates as soon as you save."
+    : "Photograph a poster or flyer and I'll read the details off it. Check what I got before saving — posters lie about as often as they don't.";
+  document.getElementById("cap-delete").hidden = !rec;
+  document.getElementById("cap-retry").hidden = true;
+  drop.hidden = !!rec;
+  shot.hidden = true;
+
+  if (rec) {
+    var srcRec = rec.photoData || (rec.photoId ? "/_blob/" + rec.photoId : "");
+    if (srcRec) {
+      shot.src = srcRec; shot.hidden = false; drop.hidden = false;
+      document.getElementById("cap-buttons").hidden = true;
+      document.getElementById("cap-hint").hidden = true;
+    }
+    fillForm(rec);
+    document.getElementById("cap-form").hidden = false;
+    document.getElementById("cap-save").hidden = false;
+  } else {
+    document.getElementById("cap-buttons").hidden = false;
+    document.getElementById("cap-hint").hidden = false;
+    document.getElementById("cap-form").hidden = true;
+    document.getElementById("cap-save").hidden = true;
+  }
+}
+function capClose(){
+  if (capAbort) { try { capAbort.abort(); } catch(e){} capAbort = null; }
+  document.getElementById("cap-overlay").hidden = true;
+  capFile = null; capEditing = null;
+}
+function fillForm(r){
+  var v = function(id, val){ document.getElementById(id).value = val == null ? "" : val; };
+  v("f-title", r.title); v("f-sub", r.sub); v("f-time", r.time);
+  v("f-start", r.startDate); v("f-end", r.endDate || r.startDate);
+  v("f-venue", r.venue); v("f-hood", r.hood); v("f-url", r.url); v("f-note", r.note);
+  v("f-price", r.free ? "Free" : (r.price || ""));
+  document.getElementById("f-cat").value = CATMAP[r.cat] ? r.cat : "fest";
+}
+function readForm(){
+  var g = function(id){ return document.getElementById(id).value.trim(); };
+  var price = g("f-price");
+  var start = g("f-start"), end = g("f-end") || start;
+  return {
+    id: capEditing ? capEditing.id : newId(),
+    title: g("f-title") || "Untitled event",
+    sub: g("f-sub"), cat: document.getElementById("f-cat").value,
+    startDate: start || null, endDate: end || null, time: g("f-time") || null,
+    venue: g("f-venue"), hood: g("f-hood"), url: g("f-url"), note: g("f-note"),
+    free: /^(free|gratuit|entr[ée]e libre)$/i.test(price), price: price || null,
+    photoId: capEditing ? capEditing.photoId : null,
+    source: "poster", spotted: true,
+    status: capEditing && capEditing.status === "verified" ? "verified" : "new",
+    star: capEditing ? (capEditing.star || null) : null,
+    verifiedNote: capEditing ? (capEditing.verifiedNote || null) : null,
+    photoData: capEditing ? (capEditing.photoData || null) : null,
+    capturedAt: capEditing ? capEditing.capturedAt : new Date().toISOString(),
+    editedAt: new Date().toISOString()
+  };
+}
+
+/* iPhone photos arrive as HEIC and library shots are often huge; Claude reads
+   JPEG, PNG, WebP and GIF. Re-encode anything else through a canvas first. */
+function normalizeImage(file){
+  return new Promise(function(resolve){
+    var typeOk = /^image\/(jpeg|png|webp|gif)$/i.test(file.type || "");
+    if (typeOk && file.size < 4 * 1024 * 1024) { resolve(file); return; }
+    var url;
+    try { url = URL.createObjectURL(file); } catch(e){ resolve(file); return; }
+    var img = new Image();
+    img.onload = function(){
+      try {
+        var max = 1600;
+        var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+        var sc = Math.min(1, max / Math.max(w, h));
+        var c = document.createElement("canvas");
+        c.width = Math.max(1, Math.round(w * sc));
+        c.height = Math.max(1, Math.round(h * sc));
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function(bl){
+          URL.revokeObjectURL(url);
+          resolve(bl || file);
+        }, "image/jpeg", 0.88);
+      } catch(e){ URL.revokeObjectURL(url); resolve(file); }
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); resolve(file); };
+    img.src = url;
+  });
+}
+
+/* Claude is asked for "HH:MM" and "YYYY-MM-DD", but a poster reading can come
+   back as "8 PM" or "Sept 19 2026". A date or time input silently ignores a
+   value it cannot parse, which looks like nothing was filled in at all. */
+function normTime(v){
+  if (!v) return "";
+  v = String(v).trim();
+  var m = v.match(/^(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)?$/i);
+  if (!m) m = v.match(/^(\d{1,2})\s*(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?|h)$/i);
+  if (!m) { m = v.match(/^(\d{1,2})h(\d{2})?$/i); if (m) m = [v, m[1], m[2] || "00", null]; }
+  if (!m) return "";
+  var h = parseInt(m[1], 10);
+  var min = m[2] ? parseInt(m[2], 10) : 0;
+  var ap = (m[3] || "").toLowerCase().replace(/\./g, "");
+  if (ap === "pm" && h < 12) h += 12;
+  if (ap === "am" && h === 12) h = 0;
+  if (isNaN(h) || h > 23 || isNaN(min) || min > 59) return "";
+  return (h < 10 ? "0" : "") + h + ":" + (min < 10 ? "0" : "") + min;
+}
+function normDate(v){
+  if (!v) return "";
+  v = String(v).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (!/\d/.test(v)) return "";              /* no digits is not a date */
+  var t = Date.parse(v + (/\d{4}/.test(v) ? "" : " " + new Date().getFullYear()));
+  if (isNaN(t)) return "";
+  var d = new Date(t);
+  var y = d.getFullYear();
+  if (y < 2000 || y > 2100) return "";
+  var p = function(n){ return (n < 10 ? "0" : "") + n; };
+  return y + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+
+/* When this view can't send the photo to Claude, keep a small copy inside the
+   record itself so the morning refresh can read the poster instead. Documents
+   are capped at 256 KiB, so shrink until the encoded string fits the budget. */
+function thumbDataUrl(file){
+  var BUDGET = 140000;   /* characters of base64 */
+  var dims = [1100, 900, 700], qs = [0.7, 0.55, 0.4];
+  return new Promise(function(resolve){
+    var url;
+    try { url = URL.createObjectURL(file); } catch(e){ resolve(null); return; }
+    var img = new Image();
+    img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
+    img.onload = function(){
+      URL.revokeObjectURL(url);
+      var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      var i = 0, j = 0;
+      var attempt = function(){
+        if (i >= dims.length) { resolve(null); return; }
+        try {
+          var sc = Math.min(1, dims[i] / Math.max(w, h));
+          var c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(w * sc));
+          c.height = Math.max(1, Math.round(h * sc));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          var out = c.toDataURL("image/jpeg", qs[j]);
+          if (out.length <= BUDGET) { resolve(out); return; }
+        } catch(e){ resolve(null); return; }
+        j++; if (j >= qs.length) { j = 0; i++; }
+        attempt();
+      };
+      attempt();
+    };
+    img.src = url;
+  });
+}
+
+function capSetStatus(msg, isErr){
+  var st = document.getElementById("cap-status");
+  st.textContent = msg;
+  st.className = "cap-status" + (isErr ? " err" : "");
+}
+
+function capReadPoster(file){
+  var drop = document.getElementById("cap-drop");
+  var shot = document.getElementById("cap-shot");
+  try { shot.src = URL.createObjectURL(file); shot.hidden = false; } catch(e){}
+  drop.classList.add("busy");
+  capSetStatus("Reading the poster… this takes a few seconds.");
+  document.getElementById("cap-form").hidden = true;
+  document.getElementById("cap-save").hidden = true;
+
+  capParsed = false;
+  capAbort = new AbortController();
+  var prompt = POSTER_PROMPT_HEAD + "\n\nToday's date is " + todayISO() + ".";
+  sampleFn.json(prompt, { images: file, signal: capAbort.signal, cache: false })
+    .then(function(d){
+      capAbort = null;
+      drop.classList.remove("busy");
+      if (!d || typeof d !== "object") throw { code: "invalid_json" };
+      var rec = {
+        title: d.title || "", sub: d.sub || "", cat: CATMAP[d.cat] ? d.cat : "fest",
+        startDate: normDate(d.startDate), endDate: normDate(d.endDate || d.startDate),
+        time: normTime(d.time), venue: d.venue || "", hood: d.address || "",
+        url: d.url || "", price: d.free ? "Free" : (d.price || ""), free: !!d.free,
+        note: d.language && !/english/i.test(d.language) ? ("Poster says: " + d.language) : ""
+      };
+      fillForm(rec);
+      document.getElementById("cap-form").hidden = false;
+      document.getElementById("cap-save").hidden = false;
+      var gaps = [];
+      if (!rec.startDate) gaps.push("no date");
+      if (!d.venue) gaps.push("no venue");
+      if (Array.isArray(d.unreadable) && d.unreadable.length) gaps.push("couldn't read: " + d.unreadable.join(", "));
+      var warn = document.getElementById("cap-warn");
+      if (gaps.length || d.confidence === "low") {
+        warn.textContent = "Read this one with care — " + (gaps.length ? gaps.join("; ") : "the image was hard to make out") + ". Fill in what's missing.";
+        warn.hidden = false;
+      } else { warn.hidden = true; }
+      capParsed = !!(rec.title && rec.startDate);
+      document.getElementById("cap-retry").hidden = false;
+      capSetStatus(d.confidence === "high" ? "Read it. Check the details below." : "Read it, roughly. Check the details below.");
+    })
+    .catch(function(e){
+      capAbort = null;
+      drop.classList.remove("busy");
+      var code = (e && e.code) || "";
+      var msg = "Couldn't read that one — fill the details in yourself below.";
+      if (code === "cancelled") return;
+      if (code === "not_granted") msg = "Reading posters needs your permission for Claude to look at the image. Fill it in by hand, or reload and allow it.";
+      else if (code === "rate_limited") msg = "Too many reads at once — wait a moment, or fill it in by hand.";
+      else if (code === "image_rejected") msg = "That image couldn't be opened — try taking it again, or pick a JPEG or PNG.";
+      else if (code === "images_unavailable") msg = "Reading images isn't available on this account. Fill it in by hand below.";
+      capSetStatus(msg, true);
+      document.getElementById("cap-retry").hidden = false;
+      document.getElementById("cap-form").hidden = false;
+      document.getElementById("cap-save").hidden = false;
+    });
+}
+
+function capSave(){
+  var rec = readForm();
+  var btn = document.getElementById("cap-save");
+  btn.disabled = true;
+
+  var thin = !rec.title || rec.title === "Untitled event" || !rec.startDate;
+  rec.needsRead = (!capParsed && !!capFile) || thin;
+
+  var done = function(){
+    btn.disabled = false;
+    putSpotted(rec);
+    capClose();
+    renderAll();
+    var dk = rec.startDate ? dayKeyForDate(rec.startDate) : null;
+    toast(rec.needsRead ? "Saved — the morning refresh will read the poster"
+         : dk ? "On the board for " + DAYMAP[dk].name
+         : "Saved — it'll surface that weekend");
+  };
+
+  var steps = [];
+  if (capFile && assetsNs) {
+    steps.push(assetsNs.upload(capFile).then(function(a){ rec.photoId = a.id; }).catch(function(){}));
+  }
+  /* only carry the inline copy when something still has to look at the picture */
+  if (capFile && rec.needsRead) {
+    steps.push(thumbDataUrl(capFile).then(function(u){ if (u) rec.photoData = u; }).catch(function(){}));
+  }
+  Promise.all(steps).then(done, done);
+}
+
+/* ============================================================
+   Interaction
+   ============================================================ */
+document.addEventListener("click", function(ev){
+  if (!ev.target.closest) return;
+
+  var ed = ev.target.closest("[data-editrec]");
+  if (ed) {
+    var rid = ed.getAttribute("data-editrec");
+    var rec = spotted.filter(function(r){ return r.id === rid; })[0];
+    if (rec) capOpen(rec);
+    return;
+  }
+
+  var h = ev.target.closest("[data-hide]");
+  if (h) {
+    var hk = h.getAttribute("data-hide");
+    hidden[hk] = true;
+    picksUnderHideKey(hk).forEach(function(pk){ delete picks[pk]; });
+    persist(); renderAll(); toast("Hidden — reopen it from the filter bar");
+    return;
+  }
+  var u = ev.target.closest("[data-unhide]");
+  if (u) {
+    delete hidden[u.getAttribute("data-unhide")];
+    if (hiddenCount() === 0) showHidden = false;
+    persist(); renderAll(); toast("Back on the board");
+    return;
+  }
+
+  var b = ev.target.closest("[data-pick]");
+  if (!b) return;
+  var k = b.getAttribute("data-pick");
+  if (picks[k]) { delete picks[k]; toast("Removed"); }
+  else { picks[k] = true; recordAdd(k); toast("Added to your plan"); }
+  persist();
+  renderAll();
+});
+
+document.getElementById("cap-cancel").addEventListener("click", capClose);
+document.getElementById("cap-overlay").addEventListener("click", function(ev){
+  if (ev.target === this) capClose();
+});
+document.addEventListener("keydown", function(ev){
+  if (ev.key === "Escape" && !document.getElementById("cap-overlay").hidden) capClose();
+});
+document.getElementById("cap-save").addEventListener("click", capSave);
+document.getElementById("cap-retry").addEventListener("click", function(){
+  if (capFile && (sampleFn || samplePromise)) capReadPoster(capFile);
+});
+document.getElementById("cap-delete").addEventListener("click", function(){
+  if (!capEditing) return;
+  var id = capEditing.id;
+  capClose(); dropSpotted(id); renderAll(); toast("Removed from the board");
+});
+function onPhotoPicked(){
+  var f = this.files && this.files[0];
+  if (!f) return;
+  capSetStatus("Preparing the photo…");
+  normalizeImage(f).then(function(nf){
+    capFile = nf;
+    try { var sh = document.getElementById("cap-shot"); sh.src = URL.createObjectURL(nf); sh.hidden = false; } catch(e){}
+    capSetStatus("Reading the poster… this takes a few seconds.");
+    /* the sample capability resolves after the page loads, so wait for it
+       rather than reading a variable that may not be set yet */
+    (samplePromise || Promise.resolve(sampleFn)).then(function(sf){
+      if (sf || sampleFn) { capReadPoster(nf); return; }
+      var why = sampleCaps
+        ? "This view can't send images to Claude"
+        : "Claude isn't reachable from this view";
+      capSetStatus(why + ". Save it anyway — the photo goes with it and the morning refresh reads the poster and fills in the rest.", true);
+      document.getElementById("cap-form").hidden = false;
+      document.getElementById("cap-save").hidden = false;
+    });
+  });
+}
+document.getElementById("cap-file").addEventListener("change", onPhotoPicked);
+document.getElementById("cap-lib").addEventListener("change", onPhotoPicked);
+
+var toastTimer = null;
+function toast(msg){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.setAttribute("data-show","true");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.setAttribute("data-show","false"); }, 1600);
+}
+
+document.getElementById("toggle-plan").addEventListener("click", function(){
+  var d = document.getElementById("drawer");
+  var open = d.getAttribute("data-open") === "true";
+  d.setAttribute("data-open", open ? "false" : "true");
+  this.setAttribute("aria-expanded", open ? "false" : "true");
+  this.textContent = open ? "Show itinerary" : "Hide itinerary";
+});
+
+document.getElementById("btn-clear").addEventListener("click", function(){
+  picks = Object.create(null); persist(); renderAll(); toast("Plan cleared");
+});
+
+document.getElementById("btn-copy").addEventListener("click", function(){
+  var txt = planText();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(function(){ toast("Itinerary copied"); },
+      function(){ fallbackCopy(txt); });
+  } else { fallbackCopy(txt); }
+});
+function fallbackCopy(txt){
+  var ta = document.createElement("textarea");
+  ta.value = txt; ta.setAttribute("readonly","");
+  ta.style.position="fixed"; ta.style.left="-9999px";
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); toast("Itinerary copied"); }
+  catch(e){ toast("Copy failed — select the text below"); }
+  document.body.removeChild(ta);
+}
+
+function planText(){
+  var p = planRows(), L = [];
+  L.push("MY MONTREAL WEEKEND — " + WEEKEND.label);
+  L.push("");
+  if (p.standing.length) {
+    L.push("ANY TIME THIS WEEKEND · TRIPS");
+    p.standing.forEach(function(r){
+      L.push("  • " + r.item.title + " — " + (r.item.venue || r.item.region) + " (" + r.item.when + ")");
+      if (r.item.travel) L.push("    " + r.item.travel);
+      L.push("    " + r.item.url);
+    });
+    L.push("");
+  }
+  DAYKEYS.forEach(function(dk){
+    if (!p[dk].length) return;
+    var d = DAYMAP[dk];
+    L.push(d.name.toUpperCase() + " " + d.num.replace(/^\w+\s/,"").toUpperCase());
+    p[dk].forEach(function(r){
+      L.push("  " + (r.time ? fmt(r.time) : "time TBC") + "  " + r.item.title);
+      L.push("          " + (r.item.venue || r.item.region) + (r.item.hood ? " · " + r.item.hood : ""));
+      L.push("          " + r.item.url);
+    });
+    L.push("");
+  });
+  return L.join("\n");
+}
+
+/* ---------- calendar links ----------
+   A published page can't hand the viewer an .ics: the extension allowlist
+   for downloads has no calendar format. So each itinerary line carries a
+   Google Calendar template link instead — one click, prefilled, and it
+   opens in the viewer's own calendar. */
+function pad(n){ return n < 10 ? "0" + n : "" + n; }
+function utcStamp(dateISO, hhmm, addMin){
+  /* Montreal runs UTC-4 (EDT) until early November, UTC-5 after. */
+  var p = dateISO.split("-");
+  var off = isEDT(dateISO) ? 4 : 5;
+  var t = (hhmm || "12:00").split(":");
+  var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2], +t[0] + off, +t[1]));
+  if (addMin) d = new Date(d.getTime() + addMin*60000);
+  return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + "T" +
+         pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "00Z";
+}
+function isEDT(dateISO){
+  /* EDT: second Sunday in March to first Sunday in November. */
+  var p = dateISO.split("-"), y = +p[0], m = +p[1], day = +p[2];
+  if (m > 3 && m < 11) return true;
+  if (m < 3 || m > 11) return false;
+  var first = new Date(Date.UTC(y, m-1, 1)).getUTCDay();
+  if (m === 3) return day >= (14 - first) % 7 + 8;
+  return day < (7 - first) % 7 + 1;
+}
+function plusDays(dateISO, n){
+  var p = dateISO.split("-");
+  var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + n));
+  return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate());
+}
+function gcalUrl(r){
+  var it = r.item;
+  var title = it.title + (it.sub ? " (" + it.sub + ")" : "");
+  var where = (it.venue || it.region || "") + (it.hood ? " · " + it.hood : "");
+  var details = [it.note || "", it.travel || "", it.url || ""].filter(Boolean).join("\n\n");
+  var dates;
+  if (r.time && r.day && DAYMAP[r.day]) {
+    var dISO = DAYMAP[r.day].date;
+    dates = utcStamp(dISO, r.time, 0) + "/" + utcStamp(dISO, r.time, it.dur || 120);
+  } else {
+    /* no published time: an all-day block across the weekend, end exclusive */
+    var from = WEEKEND.days[0].date;
+    var to = plusDays(WEEKEND.days[WEEKEND.days.length-1].date, 1);
+    dates = from.replace(/-/g,"") + "/" + to;
+  }
+  return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
+    "&text=" + encodeURIComponent(title) +
+    "&dates=" + dates +
+    "&location=" + encodeURIComponent(where) +
+    "&details=" + encodeURIComponent(details);
+}
+
+/* ============================================================
+   Boot
+   ============================================================ */
+function renderAll(){
+  syncControls();
+  renderHighlights();
+  renderStandingStrip();
+  renderDays();
+  renderComing();
+  renderAfieldStrip();
+  renderPending();
+  renderStamp();
+  renderPlan();
+}
+
+loadLocal();
+loadTasteLocal();
+loadSpottedLocal();
+renderStamp();
+renderControls();
+renderAll();
+renderTasteNote();
+
+/* Light up persistence once the viewer answers. Wrapped so the retry
+   control can run it again on a flaky connection. */
+function connectStore(isRetry){
+  if (!(window.claude && window.claude.use)) {
+    diag.host = "no window.claude"; diag.db = "unavailable";
+    dbState = "local"; renderStamp(); return;
+  }
+  diag.host = "viewer";
+  /* accept stays "image/*" on purpose — narrowing it to the exact media types
+     disables HEIC library photos in the iOS picker. */
+  samplePromise = window.claude.use("sample").then(function(sf){
+    if (!sf) { diag.sample = "not served in this view"; return null; }
+    return sf.limits().then(function(l){
+      sampleCaps = l;
+      if (l && l.images) { sampleFn = sf; diag.sample = "ok (images)"; return sf; }
+      diag.sample = "no image support in this view";
+      return null;
+    }).catch(function(e){ diag.sample = "limits failed: " + ((e && e.code) || "?"); return null; });
+  }).catch(function(e){ diag.sample = "unavailable: " + ((e && e.code) || "?"); return null; });
+
+  window.claude.use("assets").then(function(a){
+    assetsNs = a || null;
+    diag.assets = a ? "ok" : "not served in this view";
+  }).catch(function(e){ diag.assets = "unavailable: " + ((e && e.code) || "?"); });
+
+  window.claude.use("db").then(function(d){
+    if (!d) { diag.db = "not served in this view"; dbState = "local"; renderStamp(); return; }
+    diag.db = "resolved";
+    db = d;
+    dbDoc = db.doc("plans/" + WEEKEND.id);
+    tasteDoc = db.doc("taste/profile");
+    spottedCol = db.collection("spotted");
+
+    var takeSpotted = function(snap){
+      if (!snap || !snap.docs) return;
+      if (snap.metadata && snap.metadata.hasPendingWrites) return;
+      spotted = snap.docs.map(function(d){
+        var o = thaw(d.data());
+        if (!o.id) o.id = d.id;
+        return o;
+      });
+      dbState = "synced";
+      diag.db = "ok";
+      dbSyncedAt = new Date().toLocaleTimeString("en-CA",
+        { hour:"numeric", minute:"2-digit", timeZone:"America/Toronto" });
+      saveSpottedLocal();
+      renderAll();
+    };
+
+    /* A subscription can be slow to deliver, or die quietly. Always pull once
+       on load, and again whenever the page comes back to the foreground, so a
+       stale local copy can never be the last word. */
+    var refetchSpotted = function(){
+      if (!spottedCol) return;
+      spottedCol.get().then(takeSpotted).catch(function(e){
+        dbState = "local";
+        diag.db = "read failed: " + ((e && e.code) || "?");
+        diag.lastError = (e && e.message) ? String(e.message).slice(0, 120) : "";
+        if (window.console) console.warn("[board] spotted refetch failed", e && e.code);
+        renderStamp();
+      });
+    };
+    refetchSpotted();
+    spottedCol.onSnapshot(takeSpotted, function(e){
+      if (window.console) console.warn("[board] spotted subscription ended", e && e.code);
+      refetchSpotted();
+    });
+    document.addEventListener("visibilitychange", function(){
+      if (!document.hidden) refetchSpotted();
+    });
+    window.addEventListener("focus", refetchSpotted);
+    tasteDoc.get().then(function(sn){ if (sn && sn.exists) applyTaste(sn); })
+      .catch(function(e){ diag.lastError = "taste read: " + ((e && e.code) || "?"); });
+    function applyTaste(snap){
+      if (snap.metadata && snap.metadata.hasPendingWrites) return;
+      if (!snap.exists) { if (taste && taste.totalAdds) saveTaste(); return; }
+      var t = thaw(snap.data());
+      /* single-user store: the higher add count is the newer truth */
+      if ((t.totalAdds || 0) >= (taste.totalAdds || 0)) {
+        taste = t;
+        if (!taste.categories) taste.categories = {};
+        if (!taste.venues) taste.venues = {};
+        if (!Array.isArray(taste.recent)) taste.recent = [];
+        try { window.localStorage.setItem(TLS, JSON.stringify(taste)); } catch(e){}
+        renderTasteNote();
+      } else {
+        saveTaste();
+      }
+    }
+    tasteDoc.onSnapshot(applyTaste, function(e){
+      diag.lastError = "taste: " + ((e && e.code) || "?");
+      if (window.console) console.warn("[board] taste subscription ended", e && e.code);
+    });
+    dbDoc.get().then(function(sn){ if (sn && sn.exists) applyPlan(sn); })
+      .catch(function(e){ diag.lastError = "plans read: " + ((e && e.code) || "?"); });
+    dbDoc.onSnapshot(applyPlan, function(e){
+      diag.lastError = "plans: " + ((e && e.code) || "?");
+      if (window.console) console.warn("[board] plans subscription ended", e && e.code);
+    });
+    function applyPlan(snap){
+      if (!snap.exists) { if (Object.keys(picks).length || hiddenCount()) saveRemote(); return; }
+      var data = thaw(snap.data());
+      if (snap.metadata && snap.metadata.hasPendingWrites) return;
+      if (data.picks && typeof data.picks === "object") {
+        var merged = Object.create(null);
+        Object.keys(data.picks).forEach(function(k){ if (data.picks[k]) merged[k] = true; });
+        picks = merged;
+      }
+      var mh = Object.create(null);
+      if (data.hidden && typeof data.hidden === "object") {
+        Object.keys(data.hidden).forEach(function(k){ if (data.hidden[k]) mh[k] = true; });
+      }
+      hidden = mh;
+      saveLocal(); renderAll();
+    }
+  }).catch(function(e){
+    diag.db = "failed: " + ((e && e.code) || "?");
+    diag.lastError = (e && e.message) ? String(e.message).slice(0, 120) : "";
+    dbState = "local"; renderStamp();
+  });
+
+}
+
+connectStore(false);
+
+/* The board is read during the weekend it describes, so "over" has to keep
+   up with the clock. Re-render on the minute, but never while the capture
+   dialog is open or the tab is in the background. */
+var lastTick = -1;
+setInterval(function(){
+  if (document.hidden) return;
+  if (!document.getElementById("cap-overlay").hidden) return;
+  var covers = WEEKEND.days.some(function(d){ return d.date === todayISO(); });
+  if (!covers) return;
+  var n = nowMins();
+  if (n === lastTick) return;
+  lastTick = n;
+  renderAll();
+}, 30000);
+
+setTimeout(function(){
+  if (dbState === "connecting") {
+    if (diag.db === "pending") diag.db = "no answer within 30s";
+    dbState = "local"; renderStamp();
+  }
+}, 30000);
+})();
+</script>
+<script src="/gate.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("/sw.js").catch(function(){});
+  });
+}
+</script>
+</body>
+</html>
