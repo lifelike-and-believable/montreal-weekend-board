@@ -151,6 +151,58 @@ Three things went with that, all carried since the artifact:
   upload had failed loses its thumbnail** — it keeps everything else.
 - `thumbDataUrl`, which built that copy.
 
+### Links read off a poster
+
+A poster prints `jackalope.co/festival`, not `https://jackalope.co/festival`.
+Stored as printed and handed to an `href`, that is a path on this site: the
+one link the poster carried opens a page of our own that does not exist.
+`normUrl` puts the scheme back on anything shaped like a host, completes a
+protocol-relative link, and passes `http`, `https`, `mailto` and `tel`
+through as typed.
+
+Everything else comes back empty, on purpose. The "url" line on a poster is
+often not a URL — "see the poster", "@venue_mtl", a phone number — and
+prefixing those with `https://` makes a card that looks clickable and is
+not. `titleLink` then renders the title as plain text rather than as
+`<a href="">`, which reloads the board. Records are normalised both on the
+way in (the poster read, the capture form) and on the way out to a card, so
+a record saved before any of this still gets a working link.
+
+The field is now a plain text input: `type="url"` marks a bare host invalid
+and offers nothing in return, given the scheme is added here anyway.
+
+### When the refresh catches up with a poster
+
+Photograph a poster on Tuesday and by Saturday the morning refresh may well
+have found the organisers' own listing for the same night — with the
+showtimes, the price and a link the poster never printed. Left alone the
+board shows that evening twice, and the weaker of the two copies is the one
+read off a photograph in the street.
+
+So the refreshed listing takes the slot and the poster record steps aside,
+handing over its Edit button: the photograph, the dates as printed and the
+record itself are all still there behind it, and the card carries a
+"Poster, now listed" tag instead of "Not checked yet" — the listing is the
+check the poster was waiting for. Nothing is written and nothing is deleted.
+The match is worked out fresh on every render, so a listing absent from the
+next morning's refresh brings the poster card straight back.
+
+Matching is deliberately narrow, because a twin claimed too eagerly loses an
+event off the board entirely:
+
+- titles have to agree once reduced to letters and digits (accents and
+  punctuation dropped), or agree up to a whole word at the front —
+  "JACKALOPE" answers "Jackalope Fest 2026", "Gordon" does not answer
+  "Kim Gordon", and a title under six letters only ever matches exactly
+- a dated listing has to fall inside the run the poster claims, and is
+  preferred over a standing one, which is the vaguer claim
+- only records landing in this weekend are considered at all, so a poster
+  for next year's edition of a festival running right now stays in
+  "Coming up"
+
+Picks and hidden state survive the hand-over on their own: both are keyed by
+day, category and title slug rather than by record id.
+
 ## Housekeeping
 
 The refresh prunes as it writes. It is the only moment the app knows the

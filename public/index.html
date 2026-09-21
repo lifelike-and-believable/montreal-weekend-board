@@ -724,7 +724,7 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
         <div class="f wide"><label for="f-venue">Venue</label><input id="f-venue" type="text"></div>
         <div class="f wide"><label for="f-hood">Address or neighbourhood</label><input id="f-hood" type="text"></div>
         <div class="f"><label for="f-price">Price as printed</label><input id="f-price" type="text" placeholder="$25 / Free"></div>
-        <div class="f"><label for="f-url">Link on the poster</label><input id="f-url" type="url" placeholder="https://"></div>
+        <div class="f"><label for="f-url">Link on the poster</label><input id="f-url" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="jackalope.co/festival"></div>
         <div class="f wide"><label for="f-note">Anything else worth keeping</label><textarea id="f-note"></textarea></div>
       </div>
     </div>
@@ -1287,6 +1287,38 @@ function hiddenCount(){ return Object.keys(hidden).length; }
 function esc(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
+/* A poster prints "jackalope.co/festival". A browser handed that as an
+   href reads it as a path on this site, so the one link the poster
+   carried opens a page of our own that does not exist. Anything that
+   looks like a host gets the scheme it left off.
+
+   What comes back is either a usable absolute URL or nothing at all:
+   "see the poster", "@venue_mtl" and "Info: 514-555-1234" are not links,
+   and a link that goes nowhere is worse than a title that isn't one.
+   Which is why the schemes are an allow-list rather than a handful of
+   refusals: anything else carrying a colon is prose, or somewhere a page
+   should never be sent. */
+var URL_OK = /^(https?|mailto|tel):/i;
+function normUrl(v){
+  var s = String(v == null ? "" : v).trim().replace(/^[<(\[]+|[>)\]]+$/g, "");
+  if (!s) return "";
+  if (URL_OK.test(s)) return s;                           /* already schemed */
+  if (/^[a-z][a-z0-9+.\-]*:/i.test(s)) return "";         /* some other scheme, or prose */
+  if (s.indexOf("//") === 0) return "https:" + s;         /* protocol-relative */
+  /* a bare host, with or without a path: at least one dot, and a plausible
+     tld. Rejects "see poster", "Tickets at the door", "8 p.m." */
+  if (/^(www\.|[a-z0-9][a-z0-9\-]*(\.[a-z0-9][a-z0-9\-]*)*\.[a-z]{2,})(:\d+)?([\/?#]|$)/i.test(s))
+    return "https://" + s;
+  return "";
+}
+/* A title links only when there is somewhere to go. Without this an entry
+   with no link renders <a href="">, which reloads the board. */
+function titleLink(item, extra){
+  var u = normUrl(item.url);
+  if (!u) return esc(item.title);
+  return '<a href="' + esc(u) + '" target="_blank" rel="noopener"' +
+         (extra || "") + '>' + esc(item.title) + '</a>';
+}
 /* v17: mark the métro station with a dot for each line that stops there,
    from loc (lib/location.js, written by the refresh). Interchanges get one
    dot per line — most serve two of the four, so the cluster says which.
@@ -1521,7 +1553,7 @@ function spottedAsEvent(rec, dayKey){
     times: rec.time ? [rec.time] : [], bandHint: rec.time ? null : "evening",
     dur: rec.dur || 120,
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
-    url: rec.url || "", note: rec.note || "",
+    url: normUrl(rec.url), note: rec.note || "",
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
     spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
@@ -1529,17 +1561,85 @@ function spottedAsEvent(rec, dayKey){
 function spottedAsStanding(rec){
   var from = rec.startDate, to = rec.endDate || rec.startDate;
   return {
-    id: "spot-" + rec.id, cat: rec.cat, title: rec.title, url: rec.url || "",
+    id: "spot-" + rec.id, cat: rec.cat, title: rec.title, url: normUrl(rec.url),
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
     when: prettyDate(from) + (to && to !== from ? " – " + prettyDate(to) : ""),
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
     note: rec.note || "", spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
 }
+/* ----- when the refresh catches up with a poster -------------------
+   A poster gets photographed on a Tuesday. By Saturday the morning
+   refresh has found the organisers' own listing for the same night, with
+   the showtimes, the price and a link the poster never printed. Left
+   alone, the board then shows the evening twice, and the weaker of the
+   two copies is the one read off a photograph in the street.
+
+   So the refreshed listing takes the slot and the poster record steps
+   aside, handing over its Edit button — the photograph, the dates as
+   printed and the record itself are all still there behind it. Nothing
+   is written and nothing is deleted: if the listing is absent from the
+   next morning's refresh, the poster card comes back on its own.
+
+   Matching is deliberately narrow. Titles have to agree once reduced to
+   letters and digits, or agree up to a whole word at the front, and a
+   dated listing has to fall inside the run the poster claims. Only
+   records landing in this weekend are considered at all, so a poster
+   for next year's edition of a festival running right now is never
+   mistaken for it. */
+function titleKey(s){
+  s = String(s == null ? "" : s).toLowerCase();
+  if (s.normalize) s = s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return s.replace(/[^a-z0-9]+/g, " ").replace(/\s+/g, " ").trim();
+}
+/* Both sides already through titleKey. A short title is left to stand on
+   its own: "Tony" must not swallow "Tony Hawk Demo". */
+function keysMatch(a, b){
+  if (!a || !b || a.length < 4 || b.length < 4) return false;
+  if (a === b) return true;
+  var lng = a.length >= b.length ? a : b, srt = a.length >= b.length ? b : a;
+  return srt.length >= 6 && lng.indexOf(srt + " ") === 0;
+}
+/* Every refreshed listing, with the date it falls on where it has one.
+   A standing item has none by nature: it runs the whole weekend. */
+function onlineListings(standing, events, daymap){
+  var rows = [];
+  (standing || []).forEach(function(x){
+    rows.push({ key: titleKey(x.title), date: null, item: x });
+  });
+  (events || []).forEach(function(e){
+    var d = daymap[e.day];
+    rows.push({ key: titleKey(e.title), date: d ? d.date : null, item: e });
+  });
+  return rows.filter(function(r){ return r.key; });
+}
+var onlineIdx = null;
+function onlineIndex(){
+  if (!onlineIdx) onlineIdx = onlineListings(STANDING, EVENTS, DAYMAP);
+  return onlineIdx;
+}
+/* The refreshed listing that is the same thing as this record, or null.
+   A dated listing wins over a standing one: it is the more exact claim. */
+function onlineTwin(rec, rows){
+  var from = rec.startDate, to = rec.endDate || rec.startDate;
+  var want = titleKey(rec.title), run = null;
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!keysMatch(r.key, want)) continue;
+    if (!r.date) { run = run || r.item; continue; }
+    if (from && r.date >= from && r.date <= to) return r.item;
+  }
+  return run;
+}
+
 /* Split the store into: this weekend's timed entries, this weekend's
    multi-day runs, and everything still ahead. */
 function splitSpotted(){
-  var span = weekendSpan(), out = { events: [], standing: [], coming: [] };
+  var span = weekendSpan(), out = { events: [], standing: [], coming: [], merged: 0 };
+  /* The listings are the same objects every render, so last render's
+     hand-over is cleared before this one's is worked out. */
+  var rows = onlineIndex();
+  rows.forEach(function(r){ r.item.recId = null; r.item.fromPoster = false; });
   spotted.forEach(function(rec){
     if (rec.status === "rejected") return;
     if (rec.needsRead) return;        /* too thin for the board; waiting on you */
@@ -1547,6 +1647,13 @@ function splitSpotted(){
     if (!from) { out.coming.push(rec); return; }
     if (to < span.from) return;                       /* over and done */
     if (from > span.to) { out.coming.push(rec); return; }
+    var twin = onlineTwin(rec, rows);
+    if (twin) {                       /* the refresh has it: it says it better */
+      twin.recId = rec.id;
+      twin.fromPoster = true;
+      out.merged++;
+      return;
+    }
     var dk = dayKeyForDate(from);
     if (from === to && dk) out.events.push(spottedAsEvent(rec, dk));
     else if (from === to && !dk) out.coming.push(rec); /* mid-week: not this weekend */
@@ -1696,6 +1803,10 @@ function tagsFor(e){
   if (e.spotted) {
     h += '<span class="tag poster">From a poster</span>';
     if (e.status !== "verified") h += '<span class="tag unver">Not checked yet</span>';
+  } else if (e.fromPoster) {
+    /* You photographed this one; the refresh has since listed it, which
+       is the check the poster card was waiting for. */
+    h += '<span class="tag poster">Poster, now listed</span>';
   }
   return h;
 }
@@ -1707,7 +1818,7 @@ function cardHtml(item, prefix){
   var on = !!picks[k];
   var where = item.venue || item.region || "";
   return '<article class="run' + (off ? ' is-hidden' : '') + '" style="--catc:' + CATMAP[item.cat].color + '">' +
-    '<h3 class="rtitle"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a></h3>' +
+    '<h3 class="rtitle">' + titleLink(item) + '</h3>' +
     '<p class="rmeta"><span class="mono" style="font-size:12px">' + esc(item.when) + '</span><br>' +
     esc(where) + (item.hood ? ' <span class="hood">· ' + hoodHtml(item) + '</span>' : '') + '</p>' +
     (item.travel ? '<p class="rtravel">' + esc(item.travel) + '</p>' : '') +
@@ -1773,9 +1884,7 @@ function renderComing(){
     return '<article class="soon" style="--catc:' + c.color + '">' +
       (r.photoId ? '<img class="thumb" src="/_blob/' + esc(r.photoId) + '" alt="">' : '') +
       '<span class="away">' + esc(countdown(r.startDate)) + '</span>' +
-      '<h3>' + (r.url
-        ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="color:inherit">' + esc(r.title) + '</a>'
-        : esc(r.title)) + '</h3>' +
+      '<h3>' + titleLink(r, ' style="color:inherit"') + '</h3>' +
       '<p class="when">' + esc(prettyDate(r.startDate) + to) + (r.time ? " · " + esc(fmt(r.time)) : "") + '</p>' +
       '<p class="rmeta">' + esc(r.venue || "Venue on the poster") + (r.hood ? ' <span class="hood">· ' + hoodHtml(r) + '</span>' : '') + '</p>' +
       (r.note ? '<p class="ev-note" style="margin:0">' + esc(r.note) + '</p>' : '') +
@@ -1917,7 +2026,7 @@ function rowHtml(e, band){
       ? (drop ? '<span class="tag onnow">On now</span>'
               : '<span class="tag live">' + esc(sinceLabel(e, band)) + '</span>')
       : '';
-  body += '<h3 class="ev-title"><a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.title) + '</a>' + stateTag + tagsFor(e) + '</h3>';
+  body += '<h3 class="ev-title">' + titleLink(e) + stateTag + tagsFor(e) + '</h3>';
   if (e.sub) body += '<p class="ev-note" style="margin:0">' + esc(e.sub) + '</p>';
   body += '<p class="ev-venue">' + esc(e.venue) + (e.hood ? ' <span class="hood">· ' + hoodHtml(e) + '</span>' : '') + '</p>';
   if (e.note) body += '<p class="ev-note" style="margin:0">' + esc(e.note) + '</p>';
@@ -2156,7 +2265,7 @@ function slotHtml(time, r, where, k){
   }
   return '<div class="slot' + (over ? ' is-over' : '') + '">' +
     '<span class="stime">' + esc(time) + '</span>' +
-    '<span><span class="sname"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a></span><br>' +
+    '<span><span class="sname">' + titleLink(item) + '</span><br>' +
     '<span class="swhere">' + esc(where) + '</span></span>' +
     '<span class="sdrop">' +
       '<a class="calbtn" href="' + esc(gcalUrl(r)) + '" target="_blank" rel="noopener" ' +
@@ -2248,7 +2357,7 @@ function readForm(){
     title: g("f-title") || "Untitled event",
     sub: g("f-sub"), cat: document.getElementById("f-cat").value,
     startDate: start || null, endDate: end || null, time: g("f-time") || null,
-    venue: g("f-venue"), hood: g("f-hood"), url: g("f-url"), note: g("f-note"),
+    venue: g("f-venue"), hood: g("f-hood"), url: normUrl(g("f-url")), note: g("f-note"),
     free: /^(free|gratuit|entr[ée]e libre)$/i.test(price), price: price || null,
     photoId: capEditing ? capEditing.photoId : null,
     source: "poster", spotted: true,
@@ -2348,7 +2457,7 @@ function capReadPoster(file){
         title: d.title || "", sub: d.sub || "", cat: CATMAP[d.cat] ? d.cat : "fest",
         startDate: normDate(d.startDate), endDate: normDate(d.endDate || d.startDate),
         time: normTime(d.time), venue: d.venue || "", hood: d.address || "",
-        url: d.url || "", price: d.free ? "Free" : (d.price || ""), free: !!d.free,
+        url: normUrl(d.url), price: d.free ? "Free" : (d.price || ""), free: !!d.free,
         note: d.language && !/english/i.test(d.language) ? ("Poster says: " + d.language) : ""
       };
       fillForm(rec);
