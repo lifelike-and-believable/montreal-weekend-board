@@ -127,6 +127,30 @@ board calling a walk down the street a trip across town. An overlap is
 still an overlap, and a comfortable gap only names the relationship when
 there is something useful to say.
 
+### Posters that could not be read
+
+The poster read is synchronous: you photograph one, `api/read-poster.js`
+reads it, and the form comes back filled in. When that read does not yield
+a title and a date, the record is held off the board and listed under
+"Needs filling in" until you complete it.
+
+It used to say the record was "queued for the morning" and that the
+refresh would read it later. Nothing ever did — no server path has ever
+looked at a spotted record, and the only one that touches them now is the
+prune. The wording says what actually happens, and a test asserts the
+promise cannot creep back while no server code could keep it.
+
+Three things went with that, all carried since the artifact:
+
+- `thaw()`, which defensively copied every snapshot because the artifact
+  host froze them. The shim does not, so it had been a no-op since the
+  port; a test pins that the shim still does not freeze.
+- `photoData`, a base64 copy of the poster inside the record, kept so the
+  never-existent later read would have something to look at. Photos are
+  served from `/_blob/<photoId>`. **A record captured before this whose
+  upload had failed loses its thumbnail** — it keeps everything else.
+- `thumbDataUrl`, which built that copy.
+
 ## Housekeeping
 
 The refresh prunes as it writes. It is the only moment the app knows the
@@ -189,10 +213,6 @@ they do today.
 
 ## Still to do
 
-- **Phase 4, simplify.** The refresh writes JSON and the artifact is gone,
-  which was the precondition. Still to drop: `photoData`, `needsRead`
-  demoted to an error path, and `thaw()` — the shim never freezes
-  snapshots, so it has been a no-op since the port.
 - **A neighbourhood filter is still not worth building**, even now that
   `loc.areaKey` would make it work: easy transit and a car make filtering
   by area much less useful than seeing where a thing is.

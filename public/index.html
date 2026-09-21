@@ -674,8 +674,8 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
   </section>
 
   <section class="pending" id="pending" hidden>
-    <p class="sect-label">Waiting to be read</p>
-    <p class="pending-lede">Saved with the photo. The morning refresh reads the poster, checks it against the venue, and they join the board. Fill in a title and a date yourself and one appears straight away.</p>
+    <p class="sect-label">Needs filling in</p>
+    <p class="pending-lede">Saved with the photo, but the read didn&rsquo;t get enough to put it on the board &mdash; a title and a date are what&rsquo;s missing. Nothing reads these later, so they wait here for you. Fill one in and it joins the board straight away.</p>
     <div class="coming-grid" id="pending-grid"></div>
   </section>
 
@@ -1284,14 +1284,6 @@ function picksUnderHideKey(hk){
 }
 function isHidden(k){ return !!hidden[k]; }
 function hiddenCount(){ return Object.keys(hidden).length; }
-/* Every document a snapshot delivers is frozen — the store owns it. Writing to
-   one throws "Attempted to assign to readonly property" under strict mode, which
-   rejects the read and looks exactly like a failed connection. Always copy first. */
-function thaw(o){
-  if (!o || typeof o !== "object") return {};
-  try { return JSON.parse(JSON.stringify(o)); } catch(e){ return {}; }
-}
-
 function esc(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
@@ -1512,8 +1504,9 @@ function countdown(iso){
 }
 
 /* A record shaped like a board entry. */
-/* Captured posters the page could not read: held out of the board, shown in
-   their own holding pen so a save never looks like it vanished. */
+/* Posters whose read did not yield a title and a date: held out of the board
+   and shown in their own pen, so a save never looks like it vanished. Nothing
+   reads them later — the pen is a list of things for you to finish. */
 function pendingSpotted(){
   return spotted.filter(function(r){
     return r.needsRead && r.status !== "rejected";
@@ -1549,7 +1542,7 @@ function splitSpotted(){
   var span = weekendSpan(), out = { events: [], standing: [], coming: [] };
   spotted.forEach(function(rec){
     if (rec.status === "rejected") return;
-    if (rec.needsRead) return;        /* held back until the poster has been read */
+    if (rec.needsRead) return;        /* too thin for the board; waiting on you */
     var from = rec.startDate, to = rec.endDate || rec.startDate;
     if (!from) { out.coming.push(rec); return; }
     if (to < span.from) return;                       /* over and done */
@@ -1752,18 +1745,18 @@ function renderPending(){
   if (!items.length) { el.hidden = true; return; }
   el.hidden = false;
   grid.innerHTML = items.map(function(r){
-    var src = r.photoData || (r.photoId ? "/_blob/" + r.photoId : "");
+    var src = r.photoId ? "/_blob/" + r.photoId : "";
     var when = r.capturedAt ? new Date(r.capturedAt).toLocaleDateString("en-CA",
       { weekday:"short", day:"numeric", month:"short", timeZone:"America/Toronto" }) : "";
-    var name = (r.title && r.title !== "Untitled event") ? r.title : "Unread poster";
+    var name = (r.title && r.title !== "Untitled event") ? r.title : "Poster to fill in";
     return '<article class="soon waiting">' +
       (src ? '<img class="thumb" src="' + esc(src) + '" alt="The poster you photographed">' : '') +
       '<span class="away">' + esc(when ? "photographed " + when : "photographed") + '</span>' +
       '<h3>' + esc(name) + '</h3>' +
-      '<p class="when">' + esc(r.startDate ? prettyDate(r.startDate) : "no date read yet") + '</p>' +
+      '<p class="when">' + esc(r.startDate ? prettyDate(r.startDate) : "no date yet") + '</p>' +
       '<div class="rfoot">' +
       '<span class="tag poster">From a poster</span>' +
-      '<span class="tag unver">Queued for the morning</span>' +
+      '<span class="tag unver">Needs a title and a date</span>' +
       '<button class="editbtn" data-editrec="' + esc(r.id) + '">Fill in now</button>' +
       '</div></article>';
   }).join("");
@@ -2217,7 +2210,7 @@ function capOpen(rec){
   shot.hidden = true;
 
   if (rec) {
-    var srcRec = rec.photoData || (rec.photoId ? "/_blob/" + rec.photoId : "");
+    var srcRec = rec.photoId ? "/_blob/" + rec.photoId : "";
     if (srcRec) {
       shot.src = srcRec; shot.hidden = false; drop.hidden = false;
       document.getElementById("cap-buttons").hidden = true;
@@ -2262,7 +2255,6 @@ function readForm(){
     status: capEditing && capEditing.status === "verified" ? "verified" : "new",
     star: capEditing ? (capEditing.star || null) : null,
     verifiedNote: capEditing ? (capEditing.verifiedNote || null) : null,
-    photoData: capEditing ? (capEditing.photoData || null) : null,
     capturedAt: capEditing ? capEditing.capturedAt : new Date().toISOString(),
     editedAt: new Date().toISOString()
   };
@@ -2327,41 +2319,6 @@ function normDate(v){
   if (y < 2000 || y > 2100) return "";
   var p = function(n){ return (n < 10 ? "0" : "") + n; };
   return y + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
-}
-
-/* When this view can't send the photo to Claude, keep a small copy inside the
-   record itself so the morning refresh can read the poster instead. Documents
-   are capped at 256 KiB, so shrink until the encoded string fits the budget. */
-function thumbDataUrl(file){
-  var BUDGET = 140000;   /* characters of base64 */
-  var dims = [1100, 900, 700], qs = [0.7, 0.55, 0.4];
-  return new Promise(function(resolve){
-    var url;
-    try { url = URL.createObjectURL(file); } catch(e){ resolve(null); return; }
-    var img = new Image();
-    img.onerror = function(){ URL.revokeObjectURL(url); resolve(null); };
-    img.onload = function(){
-      URL.revokeObjectURL(url);
-      var w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-      var i = 0, j = 0;
-      var attempt = function(){
-        if (i >= dims.length) { resolve(null); return; }
-        try {
-          var sc = Math.min(1, dims[i] / Math.max(w, h));
-          var c = document.createElement("canvas");
-          c.width = Math.max(1, Math.round(w * sc));
-          c.height = Math.max(1, Math.round(h * sc));
-          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-          var out = c.toDataURL("image/jpeg", qs[j]);
-          if (out.length <= BUDGET) { resolve(out); return; }
-        } catch(e){ resolve(null); return; }
-        j++; if (j >= qs.length) { j = 0; i++; }
-        attempt();
-      };
-      attempt();
-    };
-    img.src = url;
-  });
 }
 
 function capSetStatus(msg, isErr){
@@ -2432,6 +2389,9 @@ function capSave(){
   var btn = document.getElementById("cap-save");
   btn.disabled = true;
 
+  /* v18: nothing reads a poster later — the read happens above, when you
+     take the photo. This flag now means that read did not produce enough to
+     put on the board, so the record waits for you rather than for a job. */
   var thin = !rec.title || rec.title === "Untitled event" || !rec.startDate;
   rec.needsRead = (!capParsed && !!capFile) || thin;
 
@@ -2441,7 +2401,7 @@ function capSave(){
     capClose();
     renderAll();
     var dk = rec.startDate ? dayKeyForDate(rec.startDate) : null;
-    toast(rec.needsRead ? "Saved — the morning refresh will read the poster"
+    toast(rec.needsRead ? "Saved — add a title and a date to put it on the board"
          : dk ? "On the board for " + DAYMAP[dk].name
          : "Saved — it'll surface that weekend");
   };
@@ -2449,10 +2409,6 @@ function capSave(){
   var steps = [];
   if (capFile && assetsNs) {
     steps.push(assetsNs.upload(capFile).then(function(a){ rec.photoId = a.id; }).catch(function(){}));
-  }
-  /* only carry the inline copy when something still has to look at the picture */
-  if (capFile && rec.needsRead) {
-    steps.push(thumbDataUrl(capFile).then(function(u){ if (u) rec.photoData = u; }).catch(function(){}));
   }
   Promise.all(steps).then(done, done);
 }
@@ -2535,7 +2491,7 @@ function onPhotoPicked(){
       var why = sampleCaps
         ? "This view can't send images to Claude"
         : "Claude isn't reachable from this view";
-      capSetStatus(why + ". Save it anyway — the photo goes with it and the morning refresh reads the poster and fills in the rest.", true);
+      capSetStatus(why + ". Save it anyway — the photo goes with it — then fill in the title and date yourself.", true);
       document.getElementById("cap-form").hidden = false;
       document.getElementById("cap-save").hidden = false;
     });
@@ -2722,7 +2678,7 @@ function connectStore(isRetry){
       if (!snap || !snap.docs) return;
       if (snap.metadata && snap.metadata.hasPendingWrites) return;
       spotted = snap.docs.map(function(d){
-        var o = thaw(d.data());
+        var o = d.data();
         if (!o.id) o.id = d.id;
         return o;
       });
@@ -2761,7 +2717,7 @@ function connectStore(isRetry){
     function applyTaste(snap){
       if (snap.metadata && snap.metadata.hasPendingWrites) return;
       if (!snap.exists) { if (taste && taste.totalAdds) saveTaste(); return; }
-      var t = thaw(snap.data());
+      var t = snap.data();
       /* single-user store: the higher add count is the newer truth */
       if ((t.totalAdds || 0) >= (taste.totalAdds || 0)) {
         taste = t;
@@ -2786,7 +2742,7 @@ function connectStore(isRetry){
     });
     function applyPlan(snap){
       if (!snap.exists) { if (Object.keys(picks).length || hiddenCount()) saveRemote(); return; }
-      var data = thaw(snap.data());
+      var data = snap.data();
       if (snap.metadata && snap.metadata.hasPendingWrites) return;
       if (data.picks && typeof data.picks === "object") {
         var merged = Object.create(null);
