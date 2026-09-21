@@ -627,6 +627,9 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
 </style>
 
 <div class="wrap">
+  <!-- Port addition. Filled in by the freshness check below the board
+       script; stays hidden when the listings are this weekend's. -->
+  <div class="stale" id="stale" role="status" hidden></div>
   <header class="top">
     <div class="brand">
       <p class="kicker">Anglophone-friendly · Montréal</p>
@@ -644,7 +647,12 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
   </section>
 
   <section class="standing" id="standing" hidden>
-    <p class="sect-label">Running all weekend</p>
+    <button type="button" class="sect-head" data-sectfold="standing"
+            aria-expanded="true" aria-controls="standing-grid">
+      <span class="sect-name">Running all weekend</span>
+      <span class="sect-count" data-count-for="standing-grid"></span>
+      <span class="sect-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1.75 6 6.25 11 1.75"/></svg></span>
+    </button>
     <div class="standing-grid" id="standing-grid"></div>
   </section>
 
@@ -656,7 +664,12 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
   </section>
 
   <section class="afield" id="afield" hidden>
-    <p class="sect-label">Out of town · day and half-day trips</p>
+    <button type="button" class="sect-head" data-sectfold="afield"
+            aria-expanded="true" aria-controls="afield-grid">
+      <span class="sect-name">Out of town · day and half-day trips</span>
+      <span class="sect-count" data-count-for="afield-grid"></span>
+      <span class="sect-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 1.75 6 6.25 11 1.75"/></svg></span>
+    </button>
     <div class="standing-grid" id="afield-grid"></div>
   </section>
 
@@ -775,6 +788,100 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
     }
   }
 }
+/* ---------- métro line ----------
+   The station is already on every row; this only says which line it is on,
+   with the same dot the category chips use.
+
+   A dot rather than tinted text, for two reasons. The yellow line has no
+   readable text colour on this background — darkened far enough to pass
+   contrast it stops reading as yellow — and recolouring the text would
+   make the greyest line on the card the loudest. The dot leaves the text
+   exactly as it was.
+
+   Only a station on one line gets a dot. Interchanges and stations the
+   table does not know get none: see lib/metro.js. */
+:root{
+  --m-green:#00953F;
+  --m-orange:#E8801F;
+  --m-yellow:#D8A800;
+  --m-blue:#0B7CC0;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --m-green:#2FBF6B;
+    --m-orange:#FF9A45;
+    --m-yellow:#F0C93C;
+    --m-blue:#46A9E4;
+  }
+}
+.metro{white-space:nowrap}
+/* One dot per line the station actually serves, in line order (green,
+   orange, yellow, blue) so a cluster always reads the same way round.
+   Most interchanges serve two of the four, which is worth seeing. */
+.metro .mdots{
+  display:inline-flex;gap:2px;margin-right:4px;
+  vertical-align:middle;position:relative;top:-1px;
+}
+.metro .mdot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--ink-3);box-shadow:inset 0 0 0 1px rgba(0,0,0,.18);
+}
+.mdot.is-green{background:var(--m-green)}
+.mdot.is-orange{background:var(--m-orange)}
+.mdot.is-yellow{background:var(--m-yellow)}
+.mdot.is-blue{background:var(--m-blue)}
+@media print{.metro .mdot{box-shadow:inset 0 0 0 1px #999}}
+
+/* ---------- collapsible sections ----------
+   "Running all weekend" and "Out of town" fold away like the day boards.
+   The header restates .sect-label's typography rather than borrowing it,
+   because a button carries a UA font and this block is loaded after the
+   board's own stylesheet, where a bare `font: inherit` would win.
+
+   Unlike a folded day, this is a standing preference and is not scoped to
+   a weekend: "I never look at out-of-town" stays true next Saturday. */
+.sect-head{
+  -webkit-appearance:none;appearance:none;
+  background:none;border:0;padding:0;margin:0 0 12px;width:100%;
+  text-align:left;cursor:pointer;color:var(--ink-3);
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;
+  text-transform:uppercase;letter-spacing:.13em;font-size:11px;
+  display:flex;align-items:center;gap:10px;
+  -webkit-tap-highlight-color:transparent;
+}
+.sect-head:hover{color:var(--ink-2)}
+.sect-head:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.sect-head .sect-count{
+  font-family:"IBM Plex Mono",monospace;letter-spacing:0;font-size:10.5px;
+  color:var(--ink-3);font-variation-settings:normal;
+}
+.sect-head .sect-count:empty{display:none}
+.sect-fold{
+  flex:none;margin-left:auto;width:22px;height:22px;display:grid;place-items:center;
+  color:var(--ink-3);transition:transform .18s ease,color .18s ease;
+}
+.sect-fold svg{width:12px;height:12px;display:block}
+.sect-head:hover .sect-fold{color:var(--ink)}
+.is-folded > .sect-head .sect-fold{transform:rotate(-90deg)}
+.is-folded > .standing-grid{display:none}
+/* A folded section keeps its heading but gives back the space below it. */
+.is-folded > .sect-head{margin-bottom:0}
+@media print{.is-folded > .standing-grid{display:grid}.sect-fold{display:none}}
+
+/* ---------- staleness banner ----------
+   The board falls back to its inline listings whenever the refresh has
+   not landed, and says nothing about having done so. This is the only
+   thing on the page that can tell you the weekend on screen is not the
+   weekend you are in. */
+.stale{
+  margin:0 0 22px;padding:11px 14px;border:1px solid var(--brick);
+  border-left-width:3px;border-radius:var(--r);background:var(--brick-wash);
+  color:var(--ink);font-size:13.5px;line-height:1.5;
+}
+.stale b{font-weight:600}
+.stale .stale-why{display:block;margin-top:3px;color:var(--ink-2);font-size:12.5px}
+@media print{.stale{display:none}}
+
 /* Standalone has no pull-to-refresh and no rubber-band chrome to hide. */
 @media (display-mode: standalone){
   body{overscroll-behavior-y:none}
@@ -1188,6 +1295,31 @@ function thaw(o){
 function esc(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
+/* v17: mark the métro station with a dot for each line that stops there,
+   from loc (lib/location.js, written by the refresh). Interchanges get one
+   dot per line — most serve two of the four, so the cluster says which.
+   The string itself is untouched: only the "métro X" run inside it is
+   wrapped, and a record with no loc or an unknown station renders exactly
+   as it did before. */
+function hoodHtml(item){
+  var h = item.hood;
+  if (!h) return "";
+  var loc = item.loc;
+  var lines = loc && loc.lines;
+  if (!loc || !loc.metro || !lines || !lines.length) return esc(h);
+  var needle = "métro " + loc.metro;
+  var i = h.indexOf(needle);
+  if (i < 0) return esc(h);
+  var dots = "";
+  for (var d = 0; d < lines.length; d++)
+    dots += '<span class="mdot is-' + esc(lines[d]) + '"></span>';
+  var label = lines.join(" + ") + (lines.length > 1 ? " lines" : " line");
+  return esc(h.slice(0, i)) +
+    '<span class="metro" title="' + esc(label) + '">' +
+      '<span class="mdots" aria-hidden="true">' + dots + '</span>' + esc(needle) +
+    '</span>' +
+    esc(h.slice(i + needle.length));
+}
 
 /* ============================================================
    State
@@ -1584,7 +1716,7 @@ function cardHtml(item, prefix){
   return '<article class="run' + (off ? ' is-hidden' : '') + '" style="--catc:' + CATMAP[item.cat].color + '">' +
     '<h3 class="rtitle"><a href="' + esc(item.url) + '" target="_blank" rel="noopener">' + esc(item.title) + '</a></h3>' +
     '<p class="rmeta"><span class="mono" style="font-size:12px">' + esc(item.when) + '</span><br>' +
-    esc(where) + (item.hood ? ' <span class="hood">· ' + esc(item.hood) + '</span>' : '') + '</p>' +
+    esc(where) + (item.hood ? ' <span class="hood">· ' + hoodHtml(item) + '</span>' : '') + '</p>' +
     (item.travel ? '<p class="rtravel">' + esc(item.travel) + '</p>' : '') +
     (item.note ? '<p class="ev-note" style="margin:0">' + esc(item.note) + '</p>' : '') +
     '<div class="rfoot">' + tagsFor(item) +
@@ -1652,7 +1784,7 @@ function renderComing(){
         ? '<a href="' + esc(r.url) + '" target="_blank" rel="noopener" style="color:inherit">' + esc(r.title) + '</a>'
         : esc(r.title)) + '</h3>' +
       '<p class="when">' + esc(prettyDate(r.startDate) + to) + (r.time ? " · " + esc(fmt(r.time)) : "") + '</p>' +
-      '<p class="rmeta">' + esc(r.venue || "Venue on the poster") + (r.hood ? ' <span class="hood">· ' + esc(r.hood) + '</span>' : '') + '</p>' +
+      '<p class="rmeta">' + esc(r.venue || "Venue on the poster") + (r.hood ? ' <span class="hood">· ' + hoodHtml(r) + '</span>' : '') + '</p>' +
       (r.note ? '<p class="ev-note" style="margin:0">' + esc(r.note) + '</p>' : '') +
       '<div class="rfoot">' + tagsFor(r) +
       '<button class="editbtn" data-editrec="' + esc(r.id) + '">Edit</button></div>' +
@@ -1794,7 +1926,7 @@ function rowHtml(e, band){
       : '';
   body += '<h3 class="ev-title"><a href="' + esc(e.url) + '" target="_blank" rel="noopener">' + esc(e.title) + '</a>' + stateTag + tagsFor(e) + '</h3>';
   if (e.sub) body += '<p class="ev-note" style="margin:0">' + esc(e.sub) + '</p>';
-  body += '<p class="ev-venue">' + esc(e.venue) + (e.hood ? ' <span class="hood">· ' + esc(e.hood) + '</span>' : '') + '</p>';
+  body += '<p class="ev-venue">' + esc(e.venue) + (e.hood ? ' <span class="hood">· ' + hoodHtml(e) + '</span>' : '') + '</p>';
   if (e.note) body += '<p class="ev-note" style="margin:0">' + esc(e.note) + '</p>';
 
   if (isHidden(rowHideKey(e, band)) || isHidden(evId(e))) {
@@ -1925,6 +2057,50 @@ function planCount(p){
   return DAYKEYS.reduce(function(a,k){ return a + p[k].length; }, p.standing.length);
 }
 
+/* v18: what the itinerary can honestly say about getting from one pick to
+   the next. Everything comes from loc (lib/location.js): no distance is
+   estimated and no minutes are invented, because nothing here knows how
+   far apart two addresses are. It only knows whether two things share a
+   neighbourhood, a station, or a line — which is enough to stop the board
+   calling a walk down the street a trip across town.
+
+   Returns null when either end is unplaced, and the wording then says
+   nothing about where. */
+function travelRel(a, b){
+  var la = a && a.loc, lb = b && b.loc;
+  if (!la || !lb) return null;
+  if (la.areaKey && la.areaKey === lb.areaKey)
+    return { kind:"same", where: la.area ? "both in " + la.area : "same area" };
+  if (la.metroKey && la.metroKey === lb.metroKey)
+    return { kind:"same", where: la.metro ? "both at métro " + la.metro : "same station" };
+  var A = la.lines || [], B = lb.lines || [];
+  for (var i = 0; i < A.length; i++)
+    if (B.indexOf(A[i]) >= 0) return { kind:"line", where:"direct on the " + A[i] + " line" };
+  if (A.length && B.length) return { kind:"far", where:null };
+  return null;
+}
+
+/* The line between two picks. `tight` decides whether it reads as a
+   warning, and a shared neighbourhood is what can talk it out of one. */
+function gapHtml(g, rel){
+  var k = rel && rel.kind, where = rel && rel.where;
+  var warn = function(t){ return '<div class="gap clash"><span></span><span>' + t + '</span></div>'; };
+  var calm = function(t){ return '<div class="gap"><span></span><span>' + t + '</span></div>'; };
+
+  if (g === 0) {
+    return k === "same"
+      ? warn('back to back — ' + esc(where) + ', but no gap at all')
+      : warn('back to back — no travel time at all');
+  }
+  if (g < 30) {
+    if (k === "same") return calm(g + ' min — ' + esc(where));
+    if (k === "line") return warn(g + ' min — ' + esc(where) + ', tight');
+    if (k === "far")  return warn(g + ' min to get across town — tight');
+    return warn(g + ' min between them — tight');
+  }
+  return calm(fmtGap(g) + ' free' + (where ? ' · ' + esc(where) : ''));
+}
+
 function renderPlan(){
   var p = planRows();
   var n = planCount(p);
@@ -1960,12 +2136,8 @@ function renderPlan(){
         if (g < 0) {
           html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(prev.item.title) +
                   ' by about ' + Math.abs(g) + ' min — one of these has to go</span></div>';
-        } else if (g === 0) {
-          html += '<div class="gap clash"><span></span><span>back to back — no travel time at all</span></div>';
-        } else if (g < 30) {
-          html += '<div class="gap clash"><span></span><span>' + g + ' min to get across town — tight</span></div>';
         } else {
-          html += '<div class="gap"><span></span><span>' + fmtGap(g) + ' free</span></div>';
+          html += gapHtml(g, travelRel(prev.item, r.item));
         }
       }
       html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue + (r.item.hood ? " · " + r.item.hood : ""), key(r.item, r.time));
@@ -2661,6 +2833,135 @@ setTimeout(function(){
 }, 30000);
 })();
 </script>
+
+<!-- Port addition, deliberately outside the board's own script.
+     The board keeps its inline listings whenever the refresh has not
+     landed and shows no sign of having done so, which makes a dead
+     refresh look exactly like a live one. /board-data.js always reports
+     which path it took; this turns that into something a reader sees. -->
+<script>
+(function(){
+"use strict";
+var F = window.__BOARD_FRESH__;
+/* Signed out is the gate's business — it covers the screen already. */
+if (F && F.status === "signed_out") return;
+var el = document.getElementById("stale");
+if (!el) return;
+
+function esc(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function todayISO(){
+  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Toronto" });
+}
+function ago(iso){
+  if (!iso) return "";
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  var days = Math.floor((Date.now() - d.getTime()) / 86400000);
+  if (days <= 0) return "Last refreshed today";
+  if (days === 1) return "Last refreshed yesterday";
+  var when = d.toLocaleDateString("en-CA",
+    { month: "short", day: "numeric", timeZone: "America/Toronto" });
+  return "Last refreshed " + when + ", " + days + " days ago";
+}
+
+var head, why;
+if (F && F.status === "ok") {
+  /* Current weekend: say nothing. The stamp already carries the date. */
+  if (!F.lastDay || F.lastDay >= todayISO()) return;
+  var a = ago(F.updatedAt);
+  head = "This is not this weekend's board.";
+  why = "It covers " + esc(F.label || F.weekendId || "an earlier weekend") +
+        ", which has already passed." + (a ? " " + esc(a) + "." : "");
+} else {
+  head = "Showing the listings this app shipped with.";
+  if (F && F.status === "store_error") {
+    why = "The store could not be reached, so the daily refresh could not be " +
+          "read. These are sample listings, not this weekend's.";
+  } else if (!F && typeof navigator !== "undefined" && navigator.onLine === false) {
+    why = "You are offline and no copy of this weekend's listings has been " +
+          "saved to this device yet. These are sample listings.";
+  } else {
+    why = "The daily refresh has not landed yet. These are sample listings, " +
+          "not this weekend's.";
+  }
+}
+el.innerHTML = "<b>" + esc(head) + "</b>" +
+               "<span class=\"stale-why\">" + why + "</span>";
+el.hidden = false;
+})();
+</script>
+
+<!-- Port addition, outside the board's script. The board only ever sets
+     .hidden on these sections and refills their grid, so a class on the
+     <section> and a count read off the grid both survive every re-render
+     without the board knowing anything about either. -->
+<script>
+(function(){
+"use strict";
+var LS = "mtl-weekend-sect-fold";
+var state = {};
+
+try {
+  var raw = window.localStorage.getItem(LS);
+  if (raw) { var o = JSON.parse(raw); if (o && typeof o === "object") state = o; }
+} catch(e){}
+
+function save(){
+  try { window.localStorage.setItem(LS, JSON.stringify(state)); } catch(e){}
+}
+
+function sections(){
+  return Array.prototype.slice.call(document.querySelectorAll("[data-sectfold]"));
+}
+
+function apply(btn){
+  var id = btn.getAttribute("data-sectfold");
+  var sec = btn.parentNode;
+  var shut = !!state[id];
+  sec.classList.toggle("is-folded", shut);
+  btn.setAttribute("aria-expanded", shut ? "false" : "true");
+  var name = btn.querySelector(".sect-name");
+  btn.setAttribute("title", (shut ? "Show " : "Hide ") + (name ? name.textContent : id));
+}
+
+/* The count is what makes a folded section honest about what it is
+   holding, so it has to track the board's renders rather than the
+   moment this script ran. */
+function count(btn){
+  var el = btn.querySelector(".sect-count");
+  if (!el) return;
+  var grid = document.getElementById(el.getAttribute("data-count-for"));
+  var n = grid ? grid.childElementCount : 0;
+  el.textContent = n ? String(n) : "";
+}
+
+sections().forEach(function(btn){
+  apply(btn);
+  count(btn);
+  var el = btn.querySelector(".sect-count");
+  var grid = el && document.getElementById(el.getAttribute("data-count-for"));
+  if (grid && window.MutationObserver) {
+    new MutationObserver(function(){ count(btn); })
+      .observe(grid, { childList: true });
+  }
+});
+
+document.addEventListener("click", function(ev){
+  var btn = ev.target.closest ? ev.target.closest("[data-sectfold]") : null;
+  if (!btn) return;
+  var id = btn.getAttribute("data-sectfold");
+  state[id] = !state[id];
+  save();
+  apply(btn);
+});
+})();
+</script>
+
 <script src="/gate.js"></script>
 <script>
 if ("serviceWorker" in navigator) {

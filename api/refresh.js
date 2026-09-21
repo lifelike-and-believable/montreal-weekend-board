@@ -1,5 +1,7 @@
 import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc, setDoc } from "../lib/store.js";
+import { pruneBoard } from "../lib/prune.js";
+import { locateAll, coverage } from "../lib/location.js";
 
 /* The daily refresh POSTs the four data blocks here instead of
    republishing the artifact's HTML. That is what retires the
@@ -54,14 +56,54 @@ export default async function handler(req, res) {
   }
 
   try {
+    /* Read each record's free-text `hood` into a structured `loc` before
+       storing, so "Mile End" is one value rather than three. Strictly
+       additive: `hood` keeps the text it arrived with and the board goes
+       on rendering it verbatim. If this ever throws, the blocks are
+       stored exactly as they came — structure is a nicety, the listings
+       are the job. */
+    let standing = STANDING, events = EVENTS, afield = AFIELD, located = null;
+    try {
+      standing = locateAll(STANDING);
+      events = locateAll(EVENTS);
+      afield = locateAll(AFIELD);
+      located = coverage([standing, events, afield]);
+    } catch (e) {
+      console.error("[refresh] locate", e);
+      standing = STANDING; events = EVENTS; afield = AFIELD;
+    }
+
     await setDoc("board/current", {
-      WEEKEND, STANDING, EVENTS, AFIELD,
+      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield,
       updatedAt: new Date().toISOString()
     });
+
+    /* The weekend has turned over, which is the one moment the app knows
+       it is safe to let go of the last one. Listings are already stored,
+       so nothing below may fail the run: pruneBoard reports its problems
+       rather than throwing, and is wrapped again in case that promise
+       breaks. Pass prune:false to skip it, pruneDryRun:true to see what a
+       run would remove without removing it. */
+    let pruned = null;
+    if (b.prune !== false) {
+      try {
+        pruned = await pruneBoard({
+          weekendStart: WEEKEND.days[0] && WEEKEND.days[0].date,
+          dryRun: !!b.pruneDryRun
+        });
+        if (pruned.errors.length) console.warn("[refresh] prune", pruned.errors);
+      } catch (e) {
+        console.error("[refresh] prune threw", e);
+        pruned = { errors: [String(e.message || e)] };
+      }
+    }
+
     return res.status(200).json({
       ok: true,
       weekendId: WEEKEND.id,
-      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length }
+      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length },
+      located,
+      pruned
     });
   } catch (e) {
     console.error("[refresh]", e);
