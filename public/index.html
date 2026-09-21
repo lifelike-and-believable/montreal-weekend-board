@@ -378,9 +378,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 @media (max-width:760px){.days{grid-template-columns:1fr;gap:36px}}
 .day{min-width:0}
 .day-head{
-  display:flex;align-items:baseline;gap:10px;
-  padding-bottom:8px;border-bottom:2px solid var(--ink);
+  display:flex;align-items:baseline;gap:10px;width:100%;
+  padding:0 0 8px;border:0;border-bottom:2px solid var(--ink);
+  background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;
+  -webkit-appearance:none;appearance:none;-webkit-tap-highlight-color:transparent;
 }
+.day-head:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.day-fold{
+  flex:none;align-self:center;margin-left:10px;
+  width:24px;height:24px;display:grid;place-items:center;
+  color:var(--ink-3);transition:transform .18s ease,color .18s ease;
+}
+.day-fold svg{width:13px;height:13px;display:block}
+.day-head:hover .day-fold{color:var(--ink)}
+.day.is-folded .day-fold{transform:rotate(-90deg)}
+.day.is-folded .day-body{display:none}
+.day.is-folded .day-head{border-bottom-color:var(--line)}
 .day-head .dnum{
   font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 120,"wght" 800;
   font-size:clamp(26px,4.4vw,38px);line-height:1;letter-spacing:-.02em;text-transform:uppercase;
@@ -1195,6 +1208,30 @@ var diag = { host: (window.claude && window.claude.use) ? "viewer" : "no window.
 var LS = "mtl-weekend-" + WEEKEND.id;
 var TLS = "mtl-weekend-taste";
 
+/* Which days are rolled up. Kept on the device only, and scoped to this
+   weekend: a day you folded away on Sunday should not still be folded when
+   next week's board arrives. A day with no entry of its own starts folded
+   only if it is already behind us. */
+var FLS = "mtl-weekend-fold-" + WEEKEND.id;
+var folded = Object.create(null);
+function loadFold(){
+  try {
+    var raw = window.localStorage.getItem(FLS);
+    if (raw) { var o = JSON.parse(raw); if (o && typeof o === "object") folded = o; }
+    for (var i = window.localStorage.length - 1; i >= 0; i--) {
+      var k = window.localStorage.key(i);
+      if (k && k.indexOf("mtl-weekend-fold-") === 0 && k !== FLS) window.localStorage.removeItem(k);
+    }
+  } catch(e){}
+}
+function saveFold(){
+  try { window.localStorage.setItem(FLS, JSON.stringify(folded)); } catch(e){}
+}
+function isFolded(d){
+  if (Object.prototype.hasOwnProperty.call(folded, d.key)) return !!folded[d.key];
+  return d.date < todayISO();
+}
+
 /* What the board learns. Adds only — hiding something is never recorded,
    because a hide usually means "already seen" or "busy that night", not
    "not for me". The full listings are never filtered by any of this;
@@ -1713,11 +1750,20 @@ function renderDays(){
     if (!total) bandsHtml = '<p class="empty-band">Nothing matches the current filters on ' + esc(d.name) + '.</p>';
 
     var dayDone = d.date < todayISO();
-    return '<section class="day' + (dayDone ? ' is-done' : '') + '">' +
-      '<div class="day-head"><span class="dnum">' + esc(d.name) + '</span>' +
+    var shut = isFolded(d);
+    var bodyId = "daybody-" + d.key;
+    return '<section class="day' + (dayDone ? ' is-done' : '') + (shut ? ' is-folded' : '') + '">' +
+      '<button type="button" class="day-head" data-dayfold="' + esc(d.key) + '" ' +
+        'aria-expanded="' + (shut ? 'false' : 'true') + '" aria-controls="' + esc(bodyId) + '" ' +
+        'title="' + (shut ? 'Show' : 'Hide') + ' ' + esc(d.name) + '">' +
+      '<span class="dnum">' + esc(d.name) + '</span>' +
       (isToday ? '<span class="today-flag">Today</span>' : '') +
-      '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span></div>' +
-      bandsHtml + '</section>';
+      '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span>' +
+      '<span class="day-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" ' +
+        'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+        '<path d="M1 1.75 6 6.25 11 1.75"/></svg></span>' +
+      '</button>' +
+      '<div class="day-body" id="' + esc(bodyId) + '">' + bandsHtml + '</div></section>';
   }).join("");
 }
 
@@ -2253,6 +2299,14 @@ document.addEventListener("click", function(ev){
     return;
   }
 
+  var fold = ev.target.closest("[data-dayfold]");
+  if (fold) {
+    var fk = fold.getAttribute("data-dayfold");
+    var fd = DAYMAP[fk];
+    if (fd) { folded[fk] = !isFolded(fd); saveFold(); renderDays(); }
+    return;
+  }
+
   var h = ev.target.closest("[data-hide]");
   if (h) {
     var hk = h.getAttribute("data-hide");
@@ -2453,6 +2507,7 @@ function renderAll(){
 loadLocal();
 loadTasteLocal();
 loadSpottedLocal();
+loadFold();
 renderStamp();
 renderControls();
 renderAll();
