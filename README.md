@@ -277,6 +277,35 @@ whose title answers a listing's (the same matching the poster hand-over
 uses, or exactly "Title (Sub)" as that button names it) is treated as the
 listing and not shown.
 
+#### Travelling
+
+An event with a time zone of its own (the routine sends Google's
+`timeZone` for each) that keeps a different clock from Montreal's is cut
+into days and shown in that clock: a Revelstoke gig reads "8:10 p.m. –
+8:30 p.m. PDT" on the Saturday it happens there, not 11:10 p.m. here, or
+after midnight on Sunday. Zones that keep Montreal's clock (New York) are
+home. These entries are never compared with Montreal listings.
+
+What they are compared against is **AWAY**: when you are out of town and
+nothing in Montreal is on the cards. The routine judges it from the
+calendar (flights out and back, hotel stays, trips, events in other
+cities) and sends it as stretches:
+
+    "AWAY": [{ "start": "2026-09-25T07:30:00-04:00",
+               "end":   "2026-09-28T09:00:00-04:00", "where": "Revelstoke" }]
+
+Any timed event in another clock counts as away too, whether or not the
+routine says so. `awayForWeekend` cuts it all per day in Montreal time
+and merges overlaps. BUSY and AWAY come from the same read, so a run keeps
+or replaces them together.
+
+On the board an away stretch sits first in "On your calendar", hatched;
+the day header says **Away · Revelstoke**, **Away from 7:30 a.m.** or
+**Back 3:00 p.m.**; listings inside it have dashed buttons (and, on a day
+you are only partly away, a line saying so); the itinerary carries it
+like any calendar entry and flags a pick inside it. ✕ ignores a stretch on
+this board, as it does a calendar entry.
+
 #### Refreshing the calendar by hand
 
 The morning run reads the calendar once. Something added at lunch shows

@@ -94,7 +94,7 @@ test("a record with nothing to locate is stored as it came", async () => {
 test("the run reports its coverage", async () => {
   const res = await post(payload());
   assert.deepEqual(res.body.located, { total: 4, withArea: 3, withMetro: 2, withLine: 1 });
-  assert.deepEqual(res.body.counts, { standing: 1, events: 2, afield: 1, busy: 0 });
+  assert.deepEqual(res.body.counts, { standing: 1, events: 2, afield: 1, busy: 0, away: 0 });
 });
 
 test("an empty run is still refused, structure or not", async () => {

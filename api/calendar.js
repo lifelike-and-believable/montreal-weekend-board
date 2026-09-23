@@ -1,6 +1,6 @@
 import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc, setDoc } from "../lib/store.js";
-import { busyForWeekend, canRefresh } from "../lib/busy.js";
+import { busyForWeekend, awayForWeekend, canRefresh } from "../lib/busy.js";
 
 /* The owner's calendar, on demand.
 
@@ -14,7 +14,7 @@ import { busyForWeekend, canRefresh } from "../lib/busy.js";
      GET                     owner or job   this weekend's days, BUSY, busyAt,
                                             and whether a refresh can be asked for
      POST {op:"refresh"}     owner          start the calendar routine
-     POST {op:"store", ...}  job            replace BUSY for this weekend
+     POST {op:"store", ...}  job            replace BUSY and AWAY for this weekend
 
    Nothing here touches the listings. The routine's URL and token live in
    CALENDAR_ROUTINE_URL / CALENDAR_ROUTINE_TOKEN; without them the board
@@ -54,6 +54,7 @@ export default async function handler(req, res) {
         weekendId: (doc && doc.WEEKEND && doc.WEEKEND.id) || null,
         days: (doc && doc.WEEKEND && doc.WEEKEND.days) || [],
         BUSY: (doc && doc.BUSY) || [],
+        AWAY: (doc && doc.AWAY) || [],
         busyAt: (doc && doc.busyAt) || null,
         firedAt: (f && f.firedAt) || null,
         canRefresh: canRefresh()
@@ -94,9 +95,10 @@ export default async function handler(req, res) {
         return res.status(409).json({ code: "stale_weekend", weekendId: doc.WEEKEND.id });
       }
       const BUSY = busyForWeekend(b.BUSY, doc.WEEKEND.days);
+      const AWAY = awayForWeekend(b.AWAY, b.BUSY, doc.WEEKEND.days);
       const busyAt = new Date().toISOString();
-      await setDoc("board/current", { ...doc, BUSY, busyAt });
-      return res.status(200).json({ ok: true, weekendId: doc.WEEKEND.id, busy: BUSY.length, busyAt });
+      await setDoc("board/current", { ...doc, BUSY, AWAY, busyAt });
+      return res.status(200).json({ ok: true, weekendId: doc.WEEKEND.id, busy: BUSY.length, away: AWAY.length, busyAt });
     }
 
     return res.status(400).json({ code: "bad_op", error: "op must be refresh or store" });

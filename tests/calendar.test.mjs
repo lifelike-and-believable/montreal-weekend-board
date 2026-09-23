@@ -104,3 +104,15 @@ test("a read made for another weekend is refused", async () => {
   assert.equal(res.code, 409);
   assert.equal(docs.get("board/current").busyAt, null);
 });
+
+test("the routine's away stretches are stored with the calendar, cut per day", async () => {
+  const res = await call("job", "POST", { op: "store", weekendId: "2026-09-26",
+    BUSY: [{ id: "g", title: "Gig", timeZone: "America/Vancouver",
+             start: "2026-09-26T20:10:00-07:00", end: "2026-09-26T20:30:00-07:00" }],
+    AWAY: [{ start: "2026-09-25T07:30:00-04:00", end: "2026-09-28T09:00:00-04:00", where: "Revelstoke" }] });
+  assert.equal(res.code, 200);
+  const doc = docs.get("board/current");
+  assert.deepEqual(doc.BUSY.map((b) => [b.day, b.from, b.zone]), [["sat", "20:10", "PDT"]]);
+  assert.deepEqual(doc.AWAY.map((a) => [a.day, a.allDay, a.where]), [["sat", true, "Revelstoke"], ["sun", true, "Revelstoke"]]);
+  assert.equal(res.body.away, 2);
+});

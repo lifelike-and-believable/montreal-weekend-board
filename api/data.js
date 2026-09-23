@@ -53,6 +53,7 @@ export default async function handler(req, res) {
       EVENTS: doc.EVENTS || [],
       AFIELD: doc.AFIELD || [],
       BUSY: doc.BUSY || [],
+      AWAY: doc.AWAY || [],
       /* when the calendar was last read, and whether the board may ask
          for a fresh read (api/calendar.js) */
       CAL: { busyAt: doc.busyAt || null, canRefresh: canRefresh() },
