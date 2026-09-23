@@ -47,6 +47,8 @@ img{max-width:100%}
   --panel-ink:#EAEEE8;
   --panel-soft:#9BB0A6;
   --panel-line:#3A4A43;
+  --star:#8A5E08;
+  --star-on-panel:#E8B94A;
 
   --c-theatre:#A6402F;
   --c-film:#2D4A7A;
@@ -81,6 +83,7 @@ img{max-width:100%}
     --panel-ink:#EAEEE8;
     --panel-soft:#8A9A92;
     --panel-line:#2A332E;
+    --star:#E8B94A;
     --c-theatre:#E08573;
     --c-film:#7FA3DB;
     --c-music:#C98DBA;
@@ -112,6 +115,7 @@ img{max-width:100%}
   --panel-ink:#EAEEE8;
   --panel-soft:#8A9A92;
   --panel-line:#2A332E;
+  --star:#E8B94A;
   --c-theatre:#E08573;
   --c-film:#7FA3DB;
   --c-music:#C98DBA;
@@ -233,8 +237,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .standing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:12px}
 .run{position:relative;background:var(--surface);border:1px solid var(--line-soft);border-top:3px solid var(--catc,var(--line));padding:13px 14px 14px;display:flex;flex-direction:column;gap:6px;min-width:0;overflow-wrap:break-word}
 .run .hidebtn{position:absolute;top:7px;right:7px;margin:0}
-.run .rtitle{padding-right:20px}
-.run .rtitle{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25;letter-spacing:-.005em;padding-right:20px}
+.run .rtitle{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25;letter-spacing:-.005em;padding-right:46px}
 .run .rtitle a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line);}
 .run .rtitle a:hover{border-color:currentColor}
 .run .rmeta{font-size:13.5px;color:var(--ink-2);line-height:1.4}
@@ -512,6 +515,22 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 }
 .restore:hover{border-color:var(--accent);color:var(--accent)}
 .hl-card .hidebtn{color:var(--panel-soft)}
+/* A star is a like, not a pick: "I'd go if I could". It feeds the same
+   taste profile an Add does, so it steers the highlights whether or not
+   the thing ever makes the plan. */
+.starbtn{
+  appearance:none;cursor:pointer;background:none;border:1px solid transparent;
+  color:var(--ink-3);width:22px;height:22px;border-radius:3px;
+  font-size:14px;line-height:1;padding:0;margin-top:2px;opacity:.55;transition:all .12s;
+  font-family:"Archivo",sans-serif;
+}
+.starbtn:hover,.starbtn:focus-visible{opacity:1;border-color:var(--star);color:var(--star)}
+.starbtn[aria-pressed="true"]{opacity:1;color:var(--star)}
+.run .starbtn{position:absolute;top:7px;right:31px;margin:0}
+.hl-card .starbtn{color:var(--panel-soft)}
+.hl-card .starbtn:hover,.hl-card .starbtn:focus-visible{border-color:var(--star-on-panel);color:var(--star-on-panel)}
+.hl-card .starbtn[aria-pressed="true"]{color:var(--star-on-panel)}
+.chip#chip-starred[aria-pressed="false"]{color:var(--star)}
 .hl-card .restore{border-color:var(--panel-line);color:var(--panel-soft)}
 .card-foot-r{display:contents}
 
@@ -1284,6 +1303,15 @@ function picksUnderHideKey(hk){
 }
 function isHidden(k){ return !!hidden[k]; }
 function hiddenCount(){ return Object.keys(hidden).length; }
+/* A star belongs to the thing, not a showtime: a timed entry is starred by
+   its evId, a card by the same prefix|id key it hides by. */
+function isStarred(sk){ return !!starred[sk]; }
+function starBtn(sk, title){
+  var on = isStarred(sk);
+  return '<button class="starbtn" data-star="' + esc(sk) + '" aria-pressed="' + (on ? 'true' : 'false') + '" ' +
+    'title="' + (on ? 'Starred \u2014 tap to unstar' : 'Star it \u2014 tunes the highlights, even if you can\u2019t go') + '" ' +
+    'aria-label="' + (on ? 'Unstar ' : 'Star ') + esc(title) + '">' + (on ? '\u2605' : '\u2606') + '</button>';
+}
 function esc(s){
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 }
@@ -1356,6 +1384,8 @@ var showAfield = true;
 var showHidden = false;
 var hidePast = false;
 var hidden = Object.create(null);
+var starred = Object.create(null);   // star key -> true (evId, or standing|id / afield|id)
+var starredOnly = false;
 var db = null, dbDoc = null, tasteDoc = null;
 var dbState = "connecting";   /* connecting | synced | local */
 var dbSyncedAt = null;
@@ -1388,14 +1418,17 @@ function isFolded(d){
   return d.date < todayISO();
 }
 
-/* What the board learns. Adds only — hiding something is never recorded,
-   because a hide usually means "already seen" or "busy that night", not
-   "not for me". The full listings are never filtered by any of this;
-   it only informs which three entries get starred at the next refresh. */
+/* What the board learns. Adds and stars — hiding something is never
+   recorded, because a hide usually means "already seen" or "busy that
+   night", not "not for me". A star is the same signal as an add without
+   the plan: something liked that may not fit the weekend. The full
+   listings are never filtered by any of this; it only informs which three
+   entries the next refresh chooses as highlights. `recent[].via` says
+   which of the two put an entry there. */
 var taste = null;
 
 function blankTaste(){
-  return { version:1, totalAdds:0, categories:{}, venues:{},
+  return { version:1, totalAdds:0, totalStars:0, categories:{}, venues:{},
            afieldAdds:0, freeAdds:0, ticketedAdds:0, recent:[], updatedAt:null };
 }
 function loadTasteLocal(){
@@ -1410,12 +1443,39 @@ function saveTaste(){
   if (tasteDoc) tasteDoc.set(taste).catch(function(){});
   renderTasteNote();
 }
+/* How much the profile has seen. Adds and stars both move it, so this,
+   not totalAdds alone, is what decides which copy of it is newer. */
+function tasteWeight(t){
+  return ((t && t.totalAdds) || 0) + ((t && t.totalStars) || 0);
+}
 function recordAdd(k){
   var r = lookupKey(k);
   if (!r) return;
+  taste.totalAdds = (taste.totalAdds || 0) + 1;
+  noteInterest(r, "add");
+}
+/* One star per thing per weekend: starring, unstarring and starring again
+   is one like, and a star on something already added is already counted. */
+function recordStar(sk){
+  var r = starLookup(sk);
+  if (!r) return;
+  var it = r.item;
+  var seen = taste.recent.filter(function(x){
+    return x.weekend === WEEKEND.id && x.title === it.title;
+  })[0];
+  if (seen) {
+    if (seen.starred) return;
+    seen.starred = true;
+    taste.updatedAt = new Date().toISOString();
+    saveTaste();
+    return;
+  }
+  taste.totalStars = (taste.totalStars || 0) + 1;
+  noteInterest(r, "star");
+}
+function noteInterest(r, via){
   var it = r.item;
   var where = it.venue || it.region || "";
-  taste.totalAdds = (taste.totalAdds || 0) + 1;
   taste.categories[it.cat] = (taste.categories[it.cat] || 0) + 1;
   if (where) taste.venues[where] = (taste.venues[where] || 0) + 1;
   if (r.away) taste.afieldAdds = (taste.afieldAdds || 0) + 1;
@@ -1423,7 +1483,8 @@ function recordAdd(k){
   else taste.ticketedAdds = (taste.ticketedAdds || 0) + 1;
   taste.recent.unshift({
     title: it.title, cat: it.cat, venue: where, sub: it.sub || "",
-    weekend: WEEKEND.id, time: r.time || "", at: new Date().toISOString()
+    weekend: WEEKEND.id, time: r.time || "", at: new Date().toISOString(),
+    via: via, starred: via === "star"
   });
   taste.recent = taste.recent.slice(0, 60);
   taste.updatedAt = new Date().toISOString();
@@ -1432,15 +1493,19 @@ function recordAdd(k){
 function renderTasteNote(){
   var el = document.getElementById("taste-note");
   if (!el) return;
-  var n = (taste && taste.totalAdds) || 0;
-  if (!n) {
-    el.innerHTML = "The three highlights at the top are tuned to what you add to your plans over time — " +
+  var a = (taste && taste.totalAdds) || 0, s = (taste && taste.totalStars) || 0;
+  if (!a && !s) {
+    el.innerHTML = "The three highlights at the top are tuned to what you add to your plans and what you star " +
+      "(\u2606 — for things you like but may not make it to) — " +
       "two weighted to what you've picked before, one deliberately unlike any of it. " +
       "Hidden entries are never counted, and the listings below are never filtered by any of it.";
     return;
   }
-  el.innerHTML = "Highlights are tuned to the " + n + " thing" + (n === 1 ? "" : "s") +
-    " you've added so far — hidden entries are never counted, and the listings are never filtered by it. " +
+  var parts = [];
+  if (a) parts.push(a + " thing" + (a === 1 ? "" : "s") + " you've added");
+  if (s) parts.push(s + " you've starred");
+  el.innerHTML = "Highlights are tuned to the " + parts.join(" and ") +
+    " so far — hidden entries are never counted, and the listings are never filtered by it. " +
     '<button class="lnk" id="taste-reset" type="button">Forget my picks</button>';
   var b = document.getElementById("taste-reset");
   if (b) b.addEventListener("click", function(){
@@ -1455,15 +1520,16 @@ function loadLocal(){
       var o = JSON.parse(raw);
       if (o && o.picks) picks = o.picks;
       if (o && o.hidden) hidden = o.hidden;
+      if (o && o.starred) starred = o.starred;
     }
   } catch(e){}
 }
 function saveLocal(){
-  try { window.localStorage.setItem(LS, JSON.stringify({picks:picks, hidden:hidden})); } catch(e){}
+  try { window.localStorage.setItem(LS, JSON.stringify({picks:picks, hidden:hidden, starred:starred})); } catch(e){}
 }
 function saveRemote(){
   if (!dbDoc) return;
-  dbDoc.set({ picks: picks, hidden: hidden, savedAt: new Date().toISOString() }).catch(function(){});
+  dbDoc.set({ picks: picks, hidden: hidden, starred: starred, savedAt: new Date().toISOString() }).catch(function(){});
 }
 function persist(){ saveLocal(); saveRemote(); }
 
@@ -1722,6 +1788,7 @@ function renderControls(){
             '<span class="dot"></span>' + esc(c.label) + '</button>';
   });
   html += '<span class="ctrl-sep" aria-hidden="true"></span>';
+  html += '<button class="chip" id="chip-starred" aria-pressed="false">\u2605 Starred</button>';
   html += '<button class="chip" id="chip-free" aria-pressed="false">Free only</button>';
   html += '<button class="chip" id="chip-afield" aria-pressed="true">Out of town</button>';
   html += '<button class="chip" id="chip-past" aria-pressed="false" hidden>Hide what\u2019s over</button>';
@@ -1739,6 +1806,9 @@ function renderControls(){
       else { filters[id] = !filters[id]; }
       renderAll();
     });
+  });
+  document.getElementById("chip-starred").addEventListener("click", function(){
+    starredOnly = !starredOnly; renderAll();
   });
   document.getElementById("chip-free").addEventListener("click", function(){
     freeOnly = !freeOnly; renderAll();
@@ -1758,7 +1828,7 @@ function renderControls(){
   }).join("");
   document.getElementById("chip-all").addEventListener("click", function(){
     CATS.forEach(function(c){ filters[c.id] = true; });
-    freeOnly = false; showAfield = true; showHidden = false; hidePast = false; renderAll();
+    freeOnly = false; showAfield = true; showHidden = false; hidePast = false; starredOnly = false; renderAll();
   });
 }
 
@@ -1767,6 +1837,9 @@ function syncControls(){
     b.setAttribute("aria-pressed", filters[b.getAttribute("data-cat")] ? "true" : "false");
   });
   document.getElementById("chip-free").setAttribute("aria-pressed", freeOnly ? "true" : "false");
+  var sc = starredCount(), chipS = document.getElementById("chip-starred");
+  chipS.setAttribute("aria-pressed", starredOnly ? "true" : "false");
+  chipS.textContent = "\u2605 " + (sc ? sc + " starred" : "Starred");
   document.getElementById("chip-afield").setAttribute("aria-pressed", showAfield ? "true" : "false");
   var overCount = 0;
   EVENTS.concat(splitSpotted().events).forEach(function(e){
@@ -1785,13 +1858,15 @@ function syncControls(){
   chipH.textContent = showHidden ? ("Hiding " + hc + " — done") : (hc + " hidden — show");
   var off = CATS.filter(function(c){ return !filters[c.id]; }).length;
   document.getElementById("ctrl-note").textContent =
-    (off || freeOnly || !showAfield || hidePast) ? "filtered" : "";
+    (off || freeOnly || !showAfield || hidePast || starredOnly) ? "filtered" : "";
 }
 
 function passes(e, hk){
   if (hk && isHidden(hk) && !showHidden) return false;
   if (!filters[e.cat]) return false;
   if (freeOnly && !e.free) return false;
+  /* cards pass their prefix|id key, which is also their star key */
+  if (starredOnly && !isStarred(hk || evId(e))) return false;
   return true;
 }
 
@@ -1830,6 +1905,7 @@ function cardHtml(item, prefix){
       : '<button class="pickbtn" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '">' + (on ? 'On the plan' : 'Add') + '</button>') +
     '<span class="card-foot-r">' +
       (off || !item.recId ? '' : '<button class="editbtn" data-editrec="' + esc(item.recId) + '" style="margin-right:4px">Edit</button>') +
+      (off ? '' : starBtn(hk, item.title)) +
       (off ? '' : '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Hide this" aria-label="Hide ' + esc(item.title) + '">✕</button>') +
     '</span></div>' +
     '</article>';
@@ -1896,15 +1972,15 @@ function renderComing(){
 
 function renderHighlights(){
   var picksList = [];
-  STANDING.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("standing", x.id))) picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), when:x.when, where:x.venue}); });
-  AFIELD.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("afield", x.id))) picksList.push({item:x, k:"afield|" + x.id + "@tba", hk:hideKeyOf("afield", x.id), when:x.when, where:x.region}); });
+  STANDING.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("standing", x.id))) picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), sk:hideKeyOf("standing", x.id), when:x.when, where:x.venue}); });
+  AFIELD.forEach(function(x){ if (x.star && !isHidden(hideKeyOf("afield", x.id))) picksList.push({item:x, k:"afield|" + x.id + "@tba", hk:hideKeyOf("afield", x.id), sk:hideKeyOf("afield", x.id), when:x.when, where:x.region}); });
   EVENTS.forEach(function(e){
     if (!e.star || isHidden(evId(e))) return;
     /* a starred entry names one showtime; hiding another of its rows is not
        a reason to drop it from the panel */
     var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
     picksList.push({
-      item:e, k:key(e,t), hk:evId(e),
+      item:e, k:key(e,t), hk:evId(e), sk:evId(e),
       when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
       where:e.venue + (e.hood ? " · " + e.hood : "")
     });
@@ -1913,12 +1989,12 @@ function renderHighlights(){
   var sp = splitSpotted();
   sp.standing.forEach(function(x){
     if (x.star && !isHidden(hideKeyOf("standing", x.id)))
-      picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), when:x.when, where:x.venue});
+      picksList.push({item:x, k:"standing|" + x.id + "@tba", hk:hideKeyOf("standing", x.id), sk:hideKeyOf("standing", x.id), when:x.when, where:x.venue});
   });
   sp.events.forEach(function(e){
     if (!e.star || isHidden(evId(e))) return;
     var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
-    picksList.push({ item:e, k:key(e,t), hk:evId(e),
+    picksList.push({ item:e, k:key(e,t), hk:evId(e), sk:evId(e),
       when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
       where:e.venue + (e.hood ? " · " + e.hood : "") });
   });
@@ -1935,6 +2011,7 @@ function renderHighlights(){
       '<div style="display:flex;gap:8px;align-items:center;margin-top:auto">' +
       '<button class="pickbtn" style="margin-top:0" data-pick="' + esc(p.k) + '" aria-pressed="' + (on?'true':'false') + '">' +
       (on ? 'On the plan' : 'Add to plan') + '</button>' +
+      starBtn(p.sk, p.item.title) +
       '<button class="hidebtn" data-hide="' + esc(p.hk) + '" title="Hide this" aria-label="Hide ' + esc(p.item.title) + '">✕</button>' +
       '</div></article>';
   }).join("");
@@ -2057,6 +2134,7 @@ function rowHtml(e, band){
   var ctl = off
     ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
     : (e.recId ? '<button class="editbtn" data-editrec="' + esc(e.recId) + '" style="margin-right:4px">Edit</button>' : '') +
+      starBtn(evId(e), e.title) +
       '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Hide this" aria-label="Hide ' + esc(e.title) + '">✕</button>';
   return '<div class="ev' + (picked ? ' picked' : '') + (off ? ' is-hidden' : '') +
          (state === "over" ? ' is-over' : (state === "now" && !drop) ? ' is-live' : '') + '">' +
@@ -2137,6 +2215,25 @@ function lookupKey(k){
     }
   }
   return null;
+}
+
+/* What a star key points at on the board as it stands, posters included. */
+function starLookup(sk){
+  var sp = splitSpotted();
+  var byId = function(pool, id){ return pool.filter(function(x){ return x.id === id; })[0]; };
+  if (sk.indexOf("standing|") === 0) {
+    var st = byId(STANDING.concat(sp.standing), sk.slice(9));
+    return st ? { kind:"standing", item:st, time:null, day:null, away:false } : null;
+  }
+  if (sk.indexOf("afield|") === 0) {
+    var af = byId(AFIELD, sk.slice(7));
+    return af ? { kind:"standing", item:af, time:null, day:null, away:true } : null;
+  }
+  var ev = EVENTS.concat(sp.events).filter(function(e){ return evId(e) === sk; })[0];
+  return ev ? { kind:"event", item:ev, time:null, day:ev.day } : null;
+}
+function starredCount(){
+  return Object.keys(starred).filter(function(sk){ return starred[sk] && starLookup(sk); }).length;
 }
 
 function planRows(){
@@ -2552,6 +2649,15 @@ document.addEventListener("click", function(ev){
     persist(); renderAll(); toast("Hidden — reopen it from the filter bar");
     return;
   }
+  var st = ev.target.closest("[data-star]");
+  if (st) {
+    var sk = st.getAttribute("data-star");
+    if (starred[sk]) { delete starred[sk]; toast("Unstarred"); }
+    else { starred[sk] = true; recordStar(sk); toast("Starred \u2014 it counts toward your highlights"); }
+    if (starredOnly && !starredCount()) starredOnly = false;
+    persist(); renderAll();
+    return;
+  }
   var u = ev.target.closest("[data-unhide]");
   if (u) {
     delete hidden[u.getAttribute("data-unhide")];
@@ -2825,10 +2931,10 @@ function connectStore(isRetry){
       .catch(function(e){ diag.lastError = "taste read: " + ((e && e.code) || "?"); });
     function applyTaste(snap){
       if (snap.metadata && snap.metadata.hasPendingWrites) return;
-      if (!snap.exists) { if (taste && taste.totalAdds) saveTaste(); return; }
+      if (!snap.exists) { if (tasteWeight(taste)) saveTaste(); return; }
       var t = snap.data();
-      /* single-user store: the higher add count is the newer truth */
-      if ((t.totalAdds || 0) >= (taste.totalAdds || 0)) {
+      /* single-user store: the copy that has seen more is the newer truth */
+      if (tasteWeight(t) >= tasteWeight(taste)) {
         taste = t;
         if (!taste.categories) taste.categories = {};
         if (!taste.venues) taste.venues = {};
@@ -2850,7 +2956,7 @@ function connectStore(isRetry){
       if (window.console) console.warn("[board] plans subscription ended", e && e.code);
     });
     function applyPlan(snap){
-      if (!snap.exists) { if (Object.keys(picks).length || hiddenCount()) saveRemote(); return; }
+      if (!snap.exists) { if (Object.keys(picks).length || hiddenCount() || Object.keys(starred).length) saveRemote(); return; }
       var data = snap.data();
       if (snap.metadata && snap.metadata.hasPendingWrites) return;
       if (data.picks && typeof data.picks === "object") {
@@ -2863,6 +2969,11 @@ function connectStore(isRetry){
         Object.keys(data.hidden).forEach(function(k){ if (data.hidden[k]) mh[k] = true; });
       }
       hidden = mh;
+      var ms = Object.create(null);
+      if (data.starred && typeof data.starred === "object") {
+        Object.keys(data.starred).forEach(function(k){ if (data.starred[k]) ms[k] = true; });
+      }
+      starred = ms;
       saveLocal(); renderAll();
     }
   }).catch(function(e){
