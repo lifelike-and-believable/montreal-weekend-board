@@ -1,5 +1,6 @@
 import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc } from "../lib/store.js";
+import { canRefresh } from "../lib/busy.js";
 
 /* Serves /board-data.js — this weekend's four data blocks, written by
    the daily refresh, plus BUSY: what is on the owner's own calendar
@@ -52,6 +53,9 @@ export default async function handler(req, res) {
       EVENTS: doc.EVENTS || [],
       AFIELD: doc.AFIELD || [],
       BUSY: doc.BUSY || [],
+      /* when the calendar was last read, and whether the board may ask
+         for a fresh read (api/calendar.js) */
+      CAL: { busyAt: doc.busyAt || null, canRefresh: canRefresh() },
       updatedAt: doc.updatedAt || null
     };
 

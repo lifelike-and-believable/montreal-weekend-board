@@ -53,6 +53,7 @@ belongs, not because it has to:
                                and prunes what the last weekend left
     lib/busy.js                cuts the owner's calendar to the
                                weekend's days, in Montreal time
+    api/calendar.js            a fresh calendar read on demand
     api/login.js api/session.js
     api/health.js              config presence check, booleans only
     lib/auth.js                signed cookie, one-year expiry
@@ -84,6 +85,8 @@ In the Vercel project settings:
 | `REFRESH_SECRET` | `openssl rand -base64 32`. Bearer token for the daily refresh job. |
 | `ANTHROPIC_API_KEY` | Poster reading. |
 | `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5`. |
+| `CALENDAR_ROUTINE_URL` | Optional. The calendar routine's API trigger URL (see "Refreshing the calendar by hand"). |
+| `CALENDAR_ROUTINE_TOKEN` | Optional. That trigger's token. |
 
 Plus two Storage integrations (Vercel dashboard, Storage tab):
 
@@ -273,6 +276,38 @@ next morning it would come back as a clash with itself. A calendar entry
 whose title answers a listing's (the same matching the poster hand-over
 uses, or exactly "Title (Sub)" as that button names it) is treated as the
 listing and not shown.
+
+#### Refreshing the calendar by hand
+
+The morning run reads the calendar once. Something added at lunch shows
+up the next day unless you ask: the stamp under the masthead says
+"calendar checked 7:05 a.m. · refresh", and **refresh** starts a small
+routine of its own ("Weekend Board: refresh calendar") that reads Google
+Calendar and posts the result back. The board checks every few seconds and
+redraws when the new read lands, usually within a minute or two.
+
+    GET  /api/calendar                        owner or job: days, BUSY, busyAt
+    POST /api/calendar {op:"refresh"}         owner: start the routine
+    POST /api/calendar {op:"store", weekendId, BUSY}
+                                              job: replace BUSY, move busyAt
+
+Each run counts against the account's daily routine allowance, so a
+second tap within three minutes is refused rather than starting another.
+A read made for last weekend is refused if the board has moved on. The
+listings are never touched.
+
+Setup, once. The routine is started through its API trigger, whose token
+can only be made in the claude.ai web UI:
+
+1. At claude.ai/code/routines, open **Weekend Board: refresh calendar** →
+   **Edit**. Under **Connectors**, add **Google Calendar**. Under
+   **Select a trigger**, **Add another trigger** → **API**, save, then copy
+   the URL and **Generate token**.
+2. In the Vercel project, set `CALENDAR_ROUTINE_URL` (that URL) and
+   `CALENDAR_ROUTINE_TOKEN` (that token), and redeploy.
+
+Until both are set the board shows when the calendar was read but offers
+no refresh. `/api/health` reports `calendarRoutine`.
 
 ## Housekeeping
 

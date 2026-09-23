@@ -1272,9 +1272,11 @@ var AFIELD = [
    (lib/busy.js). Nothing inline, so a board without a refresh claims
    nothing about the calendar at all. */
 var BUSY = [];
+var CAL = { busyAt: null, canRefresh: false };   /* when it was read; can the board ask again */
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
   if (Array.isArray(BD.BUSY))        BUSY     = BD.BUSY;
+  if (BD.CAL && typeof BD.CAL === "object") CAL = BD.CAL;
   if (BD.WEEKEND && BD.WEEKEND.id)   WEEKEND  = BD.WEEKEND;
   if (Array.isArray(BD.STANDING))    STANDING = BD.STANDING;
   if (Array.isArray(BD.EVENTS))      EVENTS   = BD.EVENTS;
@@ -1849,6 +1851,71 @@ var elHlGrid = document.getElementById("hl-grid");
 var elAfield = document.getElementById("afield");
 var elAfieldGrid = document.getElementById("afield-grid");
 
+/* ---------- asking for a fresh read of your calendar ----------
+   The daily refresh reads the calendar once a day. "refresh" here asks the
+   app to start the calendar routine (api/calendar.js), which reads Google
+   Calendar and posts the result back; this then checks every few seconds
+   until the new read lands. A run takes a minute or two. */
+var calState = "idle";   /* idle | asking | waiting */
+var calTimer = null;
+function calStamp(iso){
+  var u = new Date(iso);
+  if (isNaN(u.getTime())) return "";
+  var day = u.toLocaleDateString("en-CA", { timeZone:"America/Toronto" });
+  var t = u.toLocaleTimeString("en-CA", { hour:"numeric", minute:"2-digit", timeZone:"America/Toronto" });
+  return day === todayISO() ? t
+    : u.toLocaleDateString("en-CA", { weekday:"short", timeZone:"America/Toronto" }) + " " + t;
+}
+function calLineHtml(){
+  if (!CAL.canRefresh && !CAL.busyAt) return "";
+  var read = CAL.busyAt ? "calendar checked " + esc(calStamp(CAL.busyAt)) : "calendar not checked yet";
+  var ctl = !CAL.canRefresh ? ""
+    : calState === "idle" ? ' · <button class="diagbtn" id="cal-refresh">refresh</button>'
+    : ' · checking your calendar\u2026';
+  return '<br><span id="cal-line">' + read + ctl + '</span>';
+}
+function calRefresh(){
+  if (calState !== "idle") return;
+  var since = CAL.busyAt;
+  calState = "asking"; renderStamp();
+  fetch("/api/calendar", {
+    method:"POST", credentials:"same-origin",
+    headers:{ "content-type":"application/json" },
+    body: JSON.stringify({ op:"refresh" })
+  }).then(function(r){
+    if (r.status === 202) { calWait(since); return; }
+    if (r.status === 429) { toast("Already checking \u2014 it takes a minute or two"); calWait(since); return; }
+    calState = "idle"; renderStamp();
+    toast(r.status === 501 ? "Calendar refresh isn\u2019t set up yet" : "Couldn\u2019t start the calendar check \u2014 try again later");
+  }).catch(function(){
+    calState = "idle"; renderStamp(); toast("Offline \u2014 the calendar can\u2019t be checked");
+  });
+}
+function calWait(since){
+  calState = "waiting"; renderStamp();
+  var started = Date.now();
+  var tick = function(){
+    fetch("/api/calendar", { credentials:"same-origin" })
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){
+        if (j && j.busyAt && j.busyAt !== since && j.weekendId === WEEKEND.id) {
+          BUSY = Array.isArray(j.BUSY) ? j.BUSY : [];
+          CAL.busyAt = j.busyAt;
+          calState = "idle"; renderAll(); toast("Calendar updated");
+          return;
+        }
+        if (Date.now() - started > 5 * 60 * 1000) {
+          calState = "idle"; renderStamp();
+          toast("Still waiting on the calendar \u2014 it\u2019ll be there next time you open the board");
+          return;
+        }
+        calTimer = setTimeout(tick, 8000);
+      })
+      .catch(function(){ calTimer = setTimeout(tick, 15000); });
+  };
+  calTimer = setTimeout(tick, 20000);
+}
+
 function renderStamp(){
   /* called again after the captured store loads */
   var u = new Date(WEEKEND.updated);
@@ -1870,8 +1937,10 @@ function renderStamp(){
   elStamp.innerHTML =
     '<b>' + esc(WEEKEND.label) + '</b><br>' +
     n + ' listings · refreshed ' + esc(d) + ', ' + esc(t) + '<br>' +
-    '<span id="sync-line">' + sync + '</span>' +
+    '<span id="sync-line">' + sync + '</span>' + calLineHtml() +
     '<div id="diag-out" hidden></div>';
+  var cb = document.getElementById("cal-refresh");
+  if (cb) cb.addEventListener("click", calRefresh);
   var rb = document.getElementById("diag-retry");
   if (rb) rb.addEventListener("click", function(){
     dbState = "connecting"; renderStamp(); connectStore(true);

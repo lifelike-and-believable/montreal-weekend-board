@@ -15,7 +15,8 @@ export default function handler(req, res) {
       REFRESH_SECRET: has("REFRESH_SECRET"),
       ANTHROPIC_API_KEY: has("ANTHROPIC_API_KEY"),
       redis: has("KV_REST_API_URL") || has("UPSTASH_REDIS_REST_URL"),
-      blob: has("BLOB_READ_WRITE_TOKEN")
+      blob: has("BLOB_READ_WRITE_TOKEN"),
+      calendarRoutine: has("CALENDAR_ROUTINE_URL") && has("CALENDAR_ROUTINE_TOKEN")
     },
     model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5"
   });
