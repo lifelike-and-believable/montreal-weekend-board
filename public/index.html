@@ -1870,7 +1870,7 @@ function calLineHtml(){
   if (!CAL.canRefresh && !CAL.busyAt) return "";
   var read = CAL.busyAt ? "calendar checked " + esc(calStamp(CAL.busyAt)) : "calendar not checked yet";
   var ctl = !CAL.canRefresh ? ""
-    : calState === "idle" ? ' · <button class="diagbtn" id="cal-refresh">refresh</button>'
+    : calState === "idle" ? ' · <button class="diagbtn" id="cal-refresh" title="Read your Google Calendar again \u2014 the listings stay as they are">check again</button>'
     : ' · checking your calendar\u2026';
   return '<br><span id="cal-line">' + read + ctl + '</span>';
 }

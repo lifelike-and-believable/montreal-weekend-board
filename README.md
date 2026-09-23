@@ -281,7 +281,7 @@ listing and not shown.
 
 The morning run reads the calendar once. Something added at lunch shows
 up the next day unless you ask: the stamp under the masthead says
-"calendar checked 7:05 a.m. · refresh", and **refresh** starts a small
+"calendar checked 7:05 a.m. · check again", and **check again** starts a small
 routine of its own ("Weekend Board: refresh calendar") that reads Google
 Calendar and posts the result back. The board checks every few seconds and
 redraws when the new read lands, usually within a minute or two.
