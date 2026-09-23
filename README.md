@@ -203,6 +203,34 @@ event off the board entirely:
 Picks and hidden state survive the hand-over on their own: both are keyed by
 day, category and title slug rather than by record id.
 
+### Stars
+
+The three highlights are chosen by the refresh from `taste/profile`, which
+used to learn only from what went on the plan. That misses the thing you
+would have gone to if Saturday had gone differently. Every entry (timed
+rows, the weekend-long and out-of-town cards, the highlights themselves)
+now carries a ☆ next to its ✕. A star says "I like this", with no claim
+that you are going.
+
+A star lands in `taste/profile` exactly as an add does: the category,
+venue, free-or-ticketed and out-of-town tallies all move, and it goes
+into `recent` with `via: "star"`. It is counted once per thing per
+weekend, so unstarring and starring again does not inflate it, and a star
+on something already added marks that entry `starred: true` rather than
+counting twice. Unstarring, like removing a pick, takes nothing back out of
+the profile. `totalStars` sits beside `totalAdds`, and the sync between
+devices now compares the two together, so a device that has only starred
+things still wins against an empty profile.
+
+Which things are starred is per weekend, kept with the picks and hidden
+entries in `plans/<weekendId>`. The **★ Starred** pill in the filter bar
+narrows the board to them; Reset clears it.
+
+The refresh job's own instructions live outside this repo. Anything it
+already does with `recent`, `categories` and `venues` picks stars up with
+no change. If it wants to weigh a star differently from an add, `via` is
+there to tell them apart.
+
 ## Housekeeping
 
 The refresh prunes as it writes. It is the only moment the app knows the

@@ -1,7 +1,7 @@
 /* Shell cache. The board's own data comes from /api, which is never
    cached: a stale pick or a stale spotted record would be worse than
    an empty one. The shell is cached so the board opens underground. */
-var VERSION = "wb-4";
+var VERSION = "wb-5";
 var SHELL = [
   "/", "/claude-shim.js", "/gate.js", "/board-data.js", "/manifest.webmanifest",
   "/icons/icon-192.png", "/icons/apple-touch-icon.png"
