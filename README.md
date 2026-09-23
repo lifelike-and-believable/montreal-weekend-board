@@ -51,6 +51,8 @@ belongs, not because it has to:
                                took, so a dead refresh can be seen
     api/refresh.js             the daily refresh POSTs the blocks here,
                                and prunes what the last weekend left
+    lib/busy.js                cuts the owner's calendar to the
+                               weekend's days, in Montreal time
     api/login.js api/session.js
     api/health.js              config presence check, booleans only
     lib/auth.js                signed cookie, one-year expiry
@@ -226,10 +228,51 @@ Which things are starred is per weekend, kept with the picks and hidden
 entries in `plans/<weekendId>`. The **★ Starred** pill in the filter bar
 narrows the board to them; Reset clears it.
 
-The refresh job's own instructions live outside this repo. Anything it
-already does with `recent`, `categories` and `venues` picks stars up with
-no change. If it wants to weigh a star differently from an add, `via` is
-there to tell them apart.
+The refresh routine reads the profile from this app's store
+(`POST /api/db` with `{"op":"get","path":"taste/profile"}` and its bearer
+token), not from the retired artifact's database. `via` tells a star from
+an add if it wants to weigh them differently.
+
+### Your own calendar
+
+Picks can collide with things the board has never heard of: a trip, a
+lunch, a dentist. The daily refresh routine already holds the Google
+Calendar connector, so it reads the weekend's events from the owner's
+calendar and sends them as a fifth block, `BUSY`, beside the listings:
+
+    "BUSY": [
+      { "id": "…", "title": "Trip to Quebec City",
+        "start": "2026-09-26", "end": "2026-09-28" },          all day, end exclusive
+      { "id": "…", "title": "Dentist", "location": "Plateau",
+        "start": "2026-09-26T10:30:00-04:00",
+        "end":   "2026-09-26T13:00:00-04:00" }
+    ]
+
+`lib/busy.js` cuts each one to the weekend's days in Montreal time, so a
+trip from Friday noon to Sunday night becomes a partial Friday, an all-day
+Saturday and a partial Sunday. Anything outside the weekend is dropped.
+
+A run that sends no `BUSY` at all (the calendar could not be read) keeps
+what the last run found for the same weekend, so a failed read never makes
+the weekend look free. An empty array is an answer, and clears it.
+
+On the board:
+
+- each day opens with **On your calendar**, and a day with an all-day
+  entry says **Busy all day** in its header, folded or not
+- a showing that runs into a timed entry (from its start, for `dur` or two
+  hours) says so, and its Add button is dashed; on an all-day day only the
+  buttons are marked, since the header already says it
+- the itinerary threads your calendar through the picks in time order and
+  flags a pick that runs into it; "Copy plan" leaves it out, since that
+  text is often sent to someone else
+- ✕ on an entry ignores it on this board only (it joins the hidden list)
+
+"+ Calendar" on the itinerary puts a pick into the same calendar, so the
+next morning it would come back as a clash with itself. A calendar entry
+whose title answers a listing's (the same matching the poster hand-over
+uses, or exactly "Title (Sub)" as that button names it) is treated as the
+listing and not shown.
 
 ## Housekeeping
 

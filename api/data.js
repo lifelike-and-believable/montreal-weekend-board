@@ -2,7 +2,8 @@ import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc } from "../lib/store.js";
 
 /* Serves /board-data.js — this weekend's four data blocks, written by
-   the daily refresh.
+   the daily refresh, plus BUSY: what is on the owner's own calendar
+   those days.
 
    Loaded by a plain <script> tag placed before the board's own script,
    so window.__BOARD_DATA__ is set by the time the board declares its
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
       STANDING: doc.STANDING || [],
       EVENTS: doc.EVENTS || [],
       AFIELD: doc.AFIELD || [],
+      BUSY: doc.BUSY || [],
       updatedAt: doc.updatedAt || null
     };
 

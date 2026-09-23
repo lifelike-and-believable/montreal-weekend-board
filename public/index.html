@@ -49,6 +49,7 @@ img{max-width:100%}
   --panel-line:#3A4A43;
   --star:#8A5E08;
   --star-on-panel:#E8B94A;
+  --brick-on-panel:#E89A8A;
 
   --c-theatre:#A6402F;
   --c-film:#2D4A7A;
@@ -464,6 +465,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .tbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
 .tbtn[aria-pressed="true"]::before{content:"✓ "}
 .tbtn.past,.pickbtn.past{opacity:.45}
+/* a showing that runs into something on your own calendar */
+.tbtn.clash[aria-pressed="false"],.pickbtn.clash[aria-pressed="false"]{border-color:var(--brick);border-style:dashed}
 .pickbtn{
   appearance:none;cursor:pointer;align-self:flex-start;
   font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 84,"wght" 700;
@@ -609,6 +612,28 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
   color:var(--ink-3);width:24px;height:24px;border-radius:3px;font-size:14px;line-height:1;
 }
 .xbtn:hover{border-color:var(--brick);color:var(--brick)}
+/* ---------- your own calendar ---------- */
+.busy-strip{margin-top:22px}
+.busy{
+  display:grid;grid-template-columns:1fr auto;gap:0 12px;align-items:start;
+  padding:8px 10px 9px;margin-bottom:6px;
+  background:var(--brick-wash);border-left:3px solid var(--brick);
+}
+.busy.is-hidden{opacity:.42}
+.busy-body{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:break-word}
+.busy-when{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--brick);letter-spacing:-.02em}
+.busy-what{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25}
+.busy-where{font-family:inherit;font-variation-settings:"wght" 400;color:var(--ink-2)}
+.busy-flag{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+  border:1px solid var(--brick);color:var(--brick);padding:2px 5px;border-radius:2px;align-self:center;
+}
+.ev-clash{margin:0;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;color:var(--brick)}
+.hl-clash{margin:0;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;color:var(--brick-on-panel)}
+.slot.busy-slot .stime{color:var(--brick)}
+.slot.busy-slot .sname{color:var(--brick)}
+.slot .sclash{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brick)}
 .plan-empty{padding:18px 0 6px;font-size:15px;color:var(--ink-2);max-width:58ch}
 .plan-empty b{font-family:"Archivo",sans-serif;font-variation-settings:"wght" 700;font-style:normal}
 
@@ -1242,8 +1267,14 @@ var AFIELD = [
    delivers them as window.__BOARD_DATA__ before this script runs. The
    blocks above are the fallback when the refresh has not run, the viewer
    is signed out, or the store is unreachable. */
+/* What is on the owner's own calendar those days, from the same refresh:
+   one entry per weekend day an event touches, in Montreal time
+   (lib/busy.js). Nothing inline, so a board without a refresh claims
+   nothing about the calendar at all. */
+var BUSY = [];
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
+  if (Array.isArray(BD.BUSY))        BUSY     = BD.BUSY;
   if (BD.WEEKEND && BD.WEEKEND.id)   WEEKEND  = BD.WEEKEND;
   if (Array.isArray(BD.STANDING))    STANDING = BD.STANDING;
   if (Array.isArray(BD.EVENTS))      EVENTS   = BD.EVENTS;
@@ -1666,6 +1697,82 @@ function keysMatch(a, b){
   var lng = a.length >= b.length ? a : b, srt = a.length >= b.length ? b : a;
   return srt.length >= 6 && lng.indexOf(srt + " ") === 0;
 }
+
+/* ============================================================
+   Your own calendar.
+   Shown on each day and threaded through the itinerary, so a
+   showing that runs into a trip or a lunch says so before it goes
+   on the plan. Hiding one (its ✕) only takes it off this board.
+   ============================================================ */
+var busyMemo = null;
+function busyKey(b){ return "busy|" + b.id; }
+function busyStart(b){ return b.allDay ? 0 : mins(b.from); }
+function busyEnd(b){ return b.allDay ? 1440 : mins(b.to); }
+function fmtClock(t){ return (t === "24:00" || t === "00:00") ? "midnight" : fmt(t); }
+function busyWhen(b){ return b.allDay ? "All day" : fmtClock(b.from) + " \u2013 " + fmtClock(b.to); }
+/* "+ Calendar" on the itinerary puts a pick into the very calendar the
+   refresh reads, so it would come back the next morning as a clash with
+   itself. A calendar entry whose title answers a listing's is that
+   listing, not something in its way. */
+function busyEcho(b, pool){
+  var bk = titleKey(b.title);
+  return pool.some(function(x){
+    if (x.day && x.day !== b.day) return false;
+    /* gcalUrl names it "Title (Sub)", which a short title can't prefix */
+    return keysMatch(bk, titleKey(x.title)) ||
+      (!!x.sub && bk === titleKey(x.title + " " + x.sub));
+  });
+}
+/* Worked out once per render: the echo check reads every listing. */
+function busyOn(dk){
+  if (!busyMemo) {
+    busyMemo = {};
+    var sp = splitSpotted();
+    var pool = EVENTS.concat(sp.events, STANDING, sp.standing, AFIELD);
+    BUSY.forEach(function(b){
+      if (!b || !b.day || !b.id || busyEcho(b, pool)) return;
+      (busyMemo[b.day] = busyMemo[b.day] || []).push(b);
+    });
+    Object.keys(busyMemo).forEach(function(k){
+      busyMemo[k].sort(function(a, c){ return busyStart(a) - busyStart(c); });
+    });
+  }
+  return busyMemo[dk] || [];
+}
+function busyVisible(dk){
+  return busyOn(dk).filter(function(b){ return !isHidden(busyKey(b)); });
+}
+/* What a showing would run into: from its start for its length (dur, or
+   two hours). A showing with no published time only runs into a day you
+   are away for all of. */
+function clashesAt(e, t){
+  if (!e || !e.day) return [];
+  return busyVisible(e.day).filter(function(b){
+    if (b.allDay) return true;
+    if (!t) return false;
+    var st = mins(t), en = st + (e.dur || 120);
+    return st < busyEnd(b) && busyStart(b) < en;
+  });
+}
+function clashLine(b){
+  return "\u201c" + b.title + "\u201d (" + (b.allDay ? "all day" : busyWhen(b)) + ")";
+}
+function busyStrip(dk){
+  var list = busyOn(dk).filter(function(b){ return showHidden || !isHidden(busyKey(b)); });
+  if (!list.length) return "";
+  return '<div class="busy-strip"><p class="band-label">On your calendar<span class="bct">' + list.length + '</span></p>' +
+    list.map(function(b){
+      var hk = busyKey(b), off = isHidden(hk);
+      return '<div class="busy' + (off ? ' is-hidden' : '') + '">' +
+        '<span class="busy-body"><span class="busy-when">' + esc(busyWhen(b)) + '</span>' +
+        '<span class="busy-what">' + esc(b.title) +
+          (b.where ? '<span class="busy-where"> \u00b7 ' + esc(b.where) + '</span>' : '') + '</span></span>' +
+        (off
+          ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
+          : '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Ignore this on the board" aria-label="Ignore ' + esc(b.title) + '">\u2715</button>') +
+      '</div>';
+    }).join("") + '</div>';
+}
 /* Every refreshed listing, with the date it falls on where it has one.
    A standing item has none by nature: it runs the whole weekend. */
 function onlineListings(standing, events, daymap){
@@ -1980,7 +2087,7 @@ function renderHighlights(){
        a reason to drop it from the panel */
     var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
     picksList.push({
-      item:e, k:key(e,t), hk:evId(e), sk:evId(e),
+      item:e, k:key(e,t), hk:evId(e), sk:evId(e), clash:clashesAt(e, t),
       when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
       where:e.venue + (e.hood ? " · " + e.hood : "")
     });
@@ -1994,7 +2101,7 @@ function renderHighlights(){
   sp.events.forEach(function(e){
     if (!e.star || isHidden(evId(e))) return;
     var d = DAYMAP[e.day], t = e.times.length ? e.times[0] : null;
-    picksList.push({ item:e, k:key(e,t), hk:evId(e), sk:evId(e),
+    picksList.push({ item:e, k:key(e,t), hk:evId(e), sk:evId(e), clash:clashesAt(e, t),
       when:(d ? d.name : "") + (t ? ", " + fmt(t) : ", time TBC"),
       where:e.venue + (e.hood ? " · " + e.hood : "") });
   });
@@ -2007,6 +2114,7 @@ function renderHighlights(){
       '<span class="hl-cat">' + esc(c.label) + (p.item.free ? ' · Free' : '') + '</span>' +
       '<h3 class="hl-title"><a href="' + esc(p.item.url) + '" target="_blank" rel="noopener">' + esc(p.item.title) + '</a></h3>' +
       '<p class="hl-when">' + esc(p.when) + '<br>' + esc(p.where) + '</p>' +
+      (p.clash && p.clash.length ? '<p class="hl-clash">' + esc("Runs into " + clashLine(p.clash[0]) + " on your calendar") + '</p>' : '') +
       '<p class="hl-why">' + esc(p.item.star) + '</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:auto">' +
       '<button class="pickbtn" style="margin-top:0" data-pick="' + esc(p.k) + '" aria-pressed="' + (on?'true':'false') + '">' +
@@ -2059,6 +2167,8 @@ function renderDays(){
     }).join("");
 
     if (!total) bandsHtml = '<p class="empty-band">Nothing matches the current filters on ' + esc(d.name) + '.</p>';
+    bandsHtml = busyStrip(d.key) + bandsHtml;
+    var away = busyVisible(d.key).some(function(b){ return b.allDay; });
 
     var dayDone = d.date < todayISO();
     var shut = isFolded(d);
@@ -2069,6 +2179,7 @@ function renderDays(){
         'title="' + (shut ? 'Show' : 'Hide') + ' ' + esc(d.name) + '">' +
       '<span class="dnum">' + esc(d.name) + '</span>' +
       (isToday ? '<span class="today-flag">Today</span>' : '') +
+      (away ? '<span class="busy-flag">Busy all day</span>' : '') +
       '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span>' +
       '<span class="day-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -2108,22 +2219,36 @@ function rowHtml(e, band){
   body += '<p class="ev-venue">' + esc(e.venue) + (e.hood ? ' <span class="hood">· ' + hoodHtml(e) + '</span>' : '') + '</p>';
   if (e.note) body += '<p class="ev-note" style="margin:0">' + esc(e.note) + '</p>';
 
-  if (isHidden(rowHideKey(e, band)) || isHidden(evId(e))) {
+  var rowOff = isHidden(rowHideKey(e, band)) || isHidden(evId(e));
+  /* an all-day entry is said once, at the top of the day; the rows only
+     name the timed things they run into */
+  var timedAt = function(t){ return clashesAt(e, t).filter(function(b){ return !b.allDay; }); };
+  var clashing = (times.length ? times : [null]).filter(function(t){ return timedAt(t).length; });
+  if (!rowOff && clashing.length) {
+    var hit = timedAt(clashing[0])[0];
+    var which = times.length > 1 && clashing.length < times.length
+      ? "The " + clashing.map(fmt).join(" and ") + " runs into "
+      : "Runs into ";
+    body += '<p class="ev-clash">' + esc(which + clashLine(hit) + " on your calendar") + '</p>';
+  }
+  var cc = function(t){ return clashesAt(e, t).length ? " clash" : ""; };
+
+  if (rowOff) {
     body += '<p class="ev-note" style="margin:0">Hidden from your board.</p>';
   } else if (times.length === 1) {
     var k1 = key(e, times[0]), on1 = !!picks[k1];
-    body += '<button class="pickbtn' + (isPast(e.day, times[0]) ? ' past' : '') + '" data-pick="' + esc(k1) +
+    body += '<button class="pickbtn' + (isPast(e.day, times[0]) ? ' past' : '') + cc(times[0]) + '" data-pick="' + esc(k1) +
             '" aria-pressed="' + (on1?'true':'false') + '">' + (on1 ? 'On the plan' : 'Add') + '</button>';
   } else if (times.length) {
     body += '<div class="times">' + times.map(function(t){
       var k = key(e,t), on = !!picks[k];
       var past = isPast(e.day, t) ? " past" : "";
-      return '<button class="tbtn' + past + '" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '" ' +
+      return '<button class="tbtn' + past + cc(t) + '" data-pick="' + esc(k) + '" aria-pressed="' + (on?'true':'false') + '" ' +
              'title="' + (on ? 'Remove from itinerary' : 'Add to itinerary') + '">' + esc(fmt(t)) + '</button>';
     }).join("") + '</div>';
   } else {
     var k0 = key(e,null), on0 = !!picks[k0];
-    body += '<button class="pickbtn" data-pick="' + esc(k0) + '" aria-pressed="' + (on0?'true':'false') + '">' +
+    body += '<button class="pickbtn' + cc(null) + '" data-pick="' + esc(k0) + '" aria-pressed="' + (on0?'true':'false') + '">' +
             (on0 ? 'On the plan' : 'Add anyway') + '</button>';
   }
   body += '</div>';
@@ -2324,27 +2449,53 @@ function renderPlan(){
       }).join("") + '</div>';
   }
   DAYKEYS.forEach(function(dk){
-    if (!p[dk].length) return;
+    /* your calendar sits among the picks in time order, so a gap that
+       looked free and isn't shows up here too */
+    var cal = busyVisible(dk);
+    if (!p[dk].length && !cal.length) return;
     var d = DAYMAP[dk];
     html += '<div class="plan-day"><h3>' + esc(d.name) + ' ' + esc(d.num.replace(/^\w+\s/,"")) + '</h3>';
-    p[dk].forEach(function(r, i){
-      var prev = p[dk][i-1];
-      if (prev && prev.time && r.time) {
-        var end = mins(prev.time) + (prev.item.dur || 120);
-        var g = mins(r.time) - end;
-        if (g < 0) {
-          html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(prev.item.title) +
-                  ' by about ' + Math.abs(g) + ' min — one of these has to go</span></div>';
-        } else {
-          html += gapHtml(g, travelRel(prev.item, r.item));
-        }
+    cal.filter(function(b){ return b.allDay; }).forEach(function(b){ html += busySlotHtml(b); });
+    var seq = p[dk].map(function(r){ return { r:r, at: r.time ? mins(r.time) : null }; })
+      .concat(cal.filter(function(b){ return !b.allDay; }).map(function(b){ return { b:b, at: busyStart(b) }; }))
+      .sort(function(a, c){
+        if (a.at == null) return 1; if (c.at == null) return -1;
+        return a.at - c.at;
+      });
+    var lastPick = null;
+    seq.forEach(function(x, i){
+      var prev = seq[i-1];
+      /* two picks that overlap are flagged even with your calendar between
+         them; a pick against your calendar is flagged on the pick itself */
+      var hitPick = !x.b && lastPick && x.at != null &&
+        x.at < lastPick.at + (lastPick.r.item.dur || 120);
+      if (hitPick) {
+        html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(lastPick.r.item.title) +
+                ' by about ' + (lastPick.at + (lastPick.r.item.dur || 120) - x.at) + ' min — one of these has to go</span></div>';
+      } else if (prev && prev.at != null && x.at != null) {
+        var end = prev.b ? busyEnd(prev.b) : prev.at + (prev.r.item.dur || 120);
+        var g = x.at - end;
+        if (g >= 0) html += gapHtml(g, prev.b || x.b ? null : travelRel(prev.r.item, x.r.item));
       }
-      html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue + (r.item.hood ? " · " + r.item.hood : ""), key(r.item, r.time));
+      if (!x.b && x.at != null) lastPick = x;
+      if (x.b) { html += busySlotHtml(x.b); return; }
+      var r = x.r;
+      html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue + (r.item.hood ? " · " + r.item.hood : ""),
+                       key(r.item, r.time), clashesAt(r.item, r.time));
     });
     html += '</div>';
   });
   html += '</div>';
   elBody.innerHTML = html;
+}
+
+function busySlotHtml(b){
+  var line = (b.allDay ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + "on your calendar" +
+    (b.where ? " \u00b7 " + b.where : "");
+  return '<div class="slot busy-slot">' +
+    '<span class="stime">' + esc(b.allDay ? "all day" : fmtClock(b.from)) + '</span>' +
+    '<span><span class="sname">' + esc(b.title) + '</span><br>' +
+    '<span class="swhere">' + esc(line) + '</span></span><span></span></div>';
 }
 
 function fmtGap(m){
@@ -2353,7 +2504,7 @@ function fmtGap(m){
   return h + "h" + (r ? " " + r + "m" : "");
 }
 
-function slotHtml(time, r, where, k){
+function slotHtml(time, r, where, k, clash){
   var item = r.item;
   var over = false;
   if (r.time && r.day && DAYMAP[r.day]) {
@@ -2363,7 +2514,9 @@ function slotHtml(time, r, where, k){
   return '<div class="slot' + (over ? ' is-over' : '') + '">' +
     '<span class="stime">' + esc(time) + '</span>' +
     '<span><span class="sname">' + titleLink(item) + '</span><br>' +
-    '<span class="swhere">' + esc(where) + '</span></span>' +
+    '<span class="swhere">' + esc(where) + '</span>' +
+    (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 runs into " + clashLine(clash[0]) + " on your calendar") + '</span>' : '') +
+    '</span>' +
     '<span class="sdrop">' +
       '<a class="calbtn" href="' + esc(gcalUrl(r)) + '" target="_blank" rel="noopener" ' +
       'title="Add ' + esc(item.title) + ' to Google Calendar">+ Calendar</a>' +
@@ -2670,7 +2823,11 @@ document.addEventListener("click", function(ev){
   if (!b) return;
   var k = b.getAttribute("data-pick");
   if (picks[k]) { delete picks[k]; toast("Removed"); }
-  else { picks[k] = true; recordAdd(k); toast("Added to your plan"); }
+  else {
+    picks[k] = true; recordAdd(k);
+    var pr = lookupKey(k), pc = pr && pr.kind === "event" ? clashesAt(pr.item, pr.time) : [];
+    toast(pc.length ? "Added \u2014 but it runs into \u201c" + pc[0].title + "\u201d" : "Added to your plan");
+  }
   persist();
   renderAll();
 });
@@ -2836,6 +2993,7 @@ function gcalUrl(r){
    Boot
    ============================================================ */
 function renderAll(){
+  busyMemo = null;
   syncControls();
   renderHighlights();
   renderStandingStrip();
