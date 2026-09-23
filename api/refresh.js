@@ -80,19 +80,21 @@ export default async function handler(req, res) {
        last run found for this same weekend stands, rather than the board
        quietly claiming the weekend is free. An empty array is a real
        answer and clears it. */
-    let busy = [];
+    let busy = [], busyAt = null;
     if (Array.isArray(b.BUSY)) {
-      try { busy = busyForWeekend(b.BUSY, WEEKEND.days); }
+      try { busy = busyForWeekend(b.BUSY, WEEKEND.days); busyAt = new Date().toISOString(); }
       catch (e) { console.error("[refresh] busy", e); busy = []; }
     } else {
       try {
         const prev = await getDoc("board/current");
-        if (prev && prev.WEEKEND && prev.WEEKEND.id === WEEKEND.id && Array.isArray(prev.BUSY)) busy = prev.BUSY;
+        if (prev && prev.WEEKEND && prev.WEEKEND.id === WEEKEND.id && Array.isArray(prev.BUSY)) {
+          busy = prev.BUSY; busyAt = prev.busyAt || null;
+        }
       } catch (e) { busy = []; }
     }
 
     await setDoc("board/current", {
-      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy,
+      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy, busyAt,
       updatedAt: new Date().toISOString()
     });
 
