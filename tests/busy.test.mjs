@@ -4,7 +4,7 @@
    and a trip that spans the whole weekend. */
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { busyForWeekend, toLocal } from "../lib/busy.js";
+import { busyForWeekend, awayForWeekend, toLocal } from "../lib/busy.js";
 
 const DAYS = [
   { key: "fri", date: "2026-09-25" },
@@ -15,7 +15,7 @@ const cut = (ev) => busyForWeekend([ev], DAYS);
 
 test("a timed event lands on its day in Montreal time", () => {
   const [b] = cut({ id: "d", title: "Dentist", start: "2026-09-26T10:00:00-04:00", end: "2026-09-26T11:30:00-04:00", location: "Plateau" });
-  assert.deepEqual(b, { id: "d~sat", day: "sat", from: "10:00", to: "11:30", allDay: false, title: "Dentist", where: "Plateau" });
+  assert.deepEqual(b, { id: "d~sat", day: "sat", from: "10:00", to: "11:30", allDay: false, title: "Dentist", where: "Plateau", zone: null });
 });
 
 test("a UTC timestamp is read in Montreal time, not the server's", () => {
@@ -66,4 +66,44 @@ test("titles and ids are tidied, and a blank title still says busy", () => {
   const [b] = cut({ id: "abc@google.com", title: "   ", start: "2026-09-26" });
   assert.equal(b.id, "abcgooglecom~sat");
   assert.equal(b.title, "Busy");
+});
+
+/* Travelling: the gig is shown in Revelstoke time, and being away is
+   worked out in Montreal time, because that is what it is checked
+   against. */
+test("an event in another clock is cut and shown in that clock", () => {
+  const segs = cut({ id: "p", title: "Performance", timeZone: "America/Vancouver",
+    start: "2026-09-27T03:10:00Z", end: "2026-09-27T03:30:00Z" });
+  assert.deepEqual(segs.map((s) => [s.day, s.from, s.to, s.zone]), [["sat", "20:10", "20:30", "PDT"]],
+    "Saturday 8:10 p.m. there, though it is already Sunday here");
+});
+
+test("a zone that keeps Montreal's clock is home, and an unknown zone is ignored", () => {
+  assert.equal(cut({ title: "NYC", timeZone: "America/New_York",
+    start: "2026-09-26T10:00:00-04:00", end: "2026-09-26T11:00:00-04:00" })[0].zone, null);
+  assert.equal(cut({ title: "Bad", timeZone: "Mars/Olympus",
+    start: "2026-09-26T10:00:00-04:00", end: "2026-09-26T11:00:00-04:00" })[0].zone, null);
+});
+
+test("the refresh's own away spans are cut per day in Montreal time", () => {
+  const away = awayForWeekend([{ start: "2026-09-25T07:30:00-04:00", end: "2026-09-28T09:00:00-04:00", where: "Revelstoke" }], [], DAYS);
+  assert.deepEqual(away.map((a) => [a.day, a.allDay, a.from, a.to, a.where]), [
+    ["fri", false, "07:30", "24:00", "Revelstoke"],
+    ["sat", true, null, null, "Revelstoke"],
+    ["sun", true, null, null, "Revelstoke"]
+  ]);
+});
+
+test("an event in another clock counts as away even when the refresh sends none", () => {
+  const away = awayForWeekend(undefined, [{ title: "Gig", timeZone: "America/Vancouver", location: "Revelstoke",
+    start: "2026-09-26T18:00:00-07:00", end: "2026-09-26T22:00:00-07:00" }], DAYS);
+  assert.deepEqual(away.map((a) => [a.day, a.from, a.to, a.where]), [["sat", "21:00", "24:00", "Revelstoke"], ["sun", "00:00", "01:00", "Revelstoke"]]);
+});
+
+test("overlapping away pieces on a day are one stretch", () => {
+  const away = awayForWeekend([
+    { start: "2026-09-26T09:00:00-04:00", end: "2026-09-26T13:00:00-04:00", where: "Quebec" },
+    { start: "2026-09-26T12:00:00-04:00", end: "2026-09-26T18:00:00-04:00" }
+  ], [], DAYS);
+  assert.deepEqual(away.map((a) => [a.day, a.from, a.to, a.where]), [["sat", "09:00", "18:00", "Quebec"]]);
 });

@@ -2,7 +2,7 @@ import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc, setDoc } from "../lib/store.js";
 import { pruneBoard } from "../lib/prune.js";
 import { locateAll, coverage } from "../lib/location.js";
-import { busyForWeekend } from "../lib/busy.js";
+import { busyForWeekend, awayForWeekend } from "../lib/busy.js";
 
 /* The daily refresh POSTs the four data blocks here instead of
    republishing the artifact's HTML. That is what retires the
@@ -80,21 +80,26 @@ export default async function handler(req, res) {
        last run found for this same weekend stands, rather than the board
        quietly claiming the weekend is free. An empty array is a real
        answer and clears it. */
-    let busy = [], busyAt = null;
+    /* AWAY rides with it: the same read decides both, so it is kept or
+       replaced together with BUSY, never on its own. */
+    let busy = [], away = [], busyAt = null;
     if (Array.isArray(b.BUSY)) {
-      try { busy = busyForWeekend(b.BUSY, WEEKEND.days); busyAt = new Date().toISOString(); }
-      catch (e) { console.error("[refresh] busy", e); busy = []; }
+      try {
+        busy = busyForWeekend(b.BUSY, WEEKEND.days);
+        away = awayForWeekend(b.AWAY, b.BUSY, WEEKEND.days);
+        busyAt = new Date().toISOString();
+      } catch (e) { console.error("[refresh] busy", e); busy = []; away = []; }
     } else {
       try {
         const prev = await getDoc("board/current");
         if (prev && prev.WEEKEND && prev.WEEKEND.id === WEEKEND.id && Array.isArray(prev.BUSY)) {
-          busy = prev.BUSY; busyAt = prev.busyAt || null;
+          busy = prev.BUSY; away = Array.isArray(prev.AWAY) ? prev.AWAY : []; busyAt = prev.busyAt || null;
         }
-      } catch (e) { busy = []; }
+      } catch (e) { busy = []; away = []; }
     }
 
     await setDoc("board/current", {
-      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy, busyAt,
+      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy, AWAY: away, busyAt,
       updatedAt: new Date().toISOString()
     });
 
@@ -121,7 +126,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       weekendId: WEEKEND.id,
-      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length, busy: busy.length },
+      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length, busy: busy.length, away: away.length },
       located,
       pruned
     });

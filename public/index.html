@@ -620,6 +620,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
   background:var(--brick-wash);border-left:3px solid var(--brick);
 }
 .busy.is-hidden{opacity:.42}
+/* out of town: the same strip, hatched, so it reads as a stretch of time
+   rather than one more appointment */
+.busy.away{background:repeating-linear-gradient(135deg,var(--brick-wash) 0 8px,var(--surface) 8px 16px)}
 .busy-body{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:break-word}
 .busy-when{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--brick);letter-spacing:-.02em}
 .busy-what{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25}
@@ -1272,10 +1275,14 @@ var AFIELD = [
    (lib/busy.js). Nothing inline, so a board without a refresh claims
    nothing about the calendar at all. */
 var BUSY = [];
+/* When you are out of town, per day, in Montreal time (lib/busy.js):
+   nothing in Montreal is on the cards then. */
+var AWAY = [];
 var CAL = { busyAt: null, canRefresh: false };   /* when it was read; can the board ask again */
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
   if (Array.isArray(BD.BUSY))        BUSY     = BD.BUSY;
+  if (Array.isArray(BD.AWAY))        AWAY     = BD.AWAY;
   if (BD.CAL && typeof BD.CAL === "object") CAL = BD.CAL;
   if (BD.WEEKEND && BD.WEEKEND.id)   WEEKEND  = BD.WEEKEND;
   if (Array.isArray(BD.STANDING))    STANDING = BD.STANDING;
@@ -1705,13 +1712,32 @@ function keysMatch(a, b){
    Shown on each day and threaded through the itinerary, so a
    showing that runs into a trip or a lunch says so before it goes
    on the plan. Hiding one (its ✕) only takes it off this board.
+
+   Out of town is part of it: an AWAY piece is shaped like a calendar
+   entry (away:true, title "Out of town") so it flows through the same
+   strip, clash and itinerary code. An entry kept on another clock
+   (zone set, e.g. "PDT") is shown in that clock and never compared
+   with Montreal listings; the away piece around it does that job.
    ============================================================ */
 var busyMemo = null;
-function busyKey(b){ return "busy|" + b.id; }
+function busyKey(b){ return (b.away ? "away|" : "busy|") + b.id; }
 function busyStart(b){ return b.allDay ? 0 : mins(b.from); }
 function busyEnd(b){ return b.allDay ? 1440 : mins(b.to); }
 function fmtClock(t){ return (t === "24:00" || t === "00:00") ? "midnight" : fmt(t); }
-function busyWhen(b){ return b.allDay ? "All day" : fmtClock(b.from) + " \u2013 " + fmtClock(b.to); }
+function busyWhen(b){
+  if (b.allDay) return "All day";
+  var z = b.zone ? " " + b.zone : "";
+  if (b.away && b.from === "00:00") return "Until " + fmtClock(b.to);
+  if (b.away && b.to === "24:00") return "From " + fmtClock(b.from);
+  return fmtClock(b.from) + " \u2013 " + fmtClock(b.to) + z;
+}
+function awayAsBusy(a){
+  return { id: a.id, day: a.day, from: a.from, to: a.to, allDay: !!a.allDay,
+           title: "Out of town", where: a.where || "", zone: null, away: true };
+}
+function awayOn(dk){
+  return AWAY.filter(function(a){ return a && a.day === dk && a.id; }).map(awayAsBusy);
+}
 /* "+ Calendar" on the itinerary puts a pick into the very calendar the
    refresh reads, so it would come back the next morning as a clash with
    itself. A calendar entry whose title answers a listing's is that
@@ -1744,12 +1770,20 @@ function busyOn(dk){
 function busyVisible(dk){
   return busyOn(dk).filter(function(b){ return !isHidden(busyKey(b)); });
 }
+/* Away first, then the calendar in time order. */
+function calendarOn(dk){
+  return awayOn(dk).concat(busyOn(dk));
+}
+function calendarVisible(dk){
+  return calendarOn(dk).filter(function(b){ return !isHidden(busyKey(b)); });
+}
 /* What a showing would run into: from its start for its length (dur, or
    two hours). A showing with no published time only runs into a day you
    are away for all of. */
 function clashesAt(e, t){
   if (!e || !e.day) return [];
-  return busyVisible(e.day).filter(function(b){
+  return calendarVisible(e.day).filter(function(b){
+    if (b.zone) return false;
     if (b.allDay) return true;
     if (!t) return false;
     var st = mins(t), en = st + (e.dur || 120);
@@ -1759,13 +1793,33 @@ function clashesAt(e, t){
 function clashLine(b){
   return "\u201c" + b.title + "\u201d (" + (b.allDay ? "all day" : busyWhen(b)) + ")";
 }
+/* The sentence a clash gets. `times` names the showings when only some
+   of a row's times are caught. */
+function clashSentence(b, times){
+  if (b.away) {
+    var there = b.where ? " (" + b.where + ")" : "";
+    return times ? "The " + times + " is while you\u2019re away" + there : "You\u2019re away then" + there;
+  }
+  return (times ? "The " + times + " runs into " : "Runs into ") + clashLine(b) + " on your calendar";
+}
+/* The day header's word on it: away beats busy. */
+function dayFlag(dk){
+  var cal = calendarVisible(dk);
+  var aw = cal.filter(function(b){ return b.away; });
+  if (aw.length) {
+    var a = aw[0], where = a.where ? " \u00b7 " + a.where : "";
+    if (a.allDay) return "Away" + where;
+    return (a.from === "00:00" ? "Back " + fmtClock(a.to) : "Away from " + fmtClock(a.from));
+  }
+  return cal.some(function(b){ return b.allDay; }) ? "Busy all day" : "";
+}
 function busyStrip(dk){
-  var list = busyOn(dk).filter(function(b){ return showHidden || !isHidden(busyKey(b)); });
+  var list = calendarOn(dk).filter(function(b){ return showHidden || !isHidden(busyKey(b)); });
   if (!list.length) return "";
   return '<div class="busy-strip"><p class="band-label">On your calendar<span class="bct">' + list.length + '</span></p>' +
     list.map(function(b){
       var hk = busyKey(b), off = isHidden(hk);
-      return '<div class="busy' + (off ? ' is-hidden' : '') + '">' +
+      return '<div class="busy' + (b.away ? ' away' : '') + (off ? ' is-hidden' : '') + '">' +
         '<span class="busy-body"><span class="busy-when">' + esc(busyWhen(b)) + '</span>' +
         '<span class="busy-what">' + esc(b.title) +
           (b.where ? '<span class="busy-where"> \u00b7 ' + esc(b.where) + '</span>' : '') + '</span></span>' +
@@ -2183,7 +2237,7 @@ function renderHighlights(){
       '<span class="hl-cat">' + esc(c.label) + (p.item.free ? ' · Free' : '') + '</span>' +
       '<h3 class="hl-title"><a href="' + esc(p.item.url) + '" target="_blank" rel="noopener">' + esc(p.item.title) + '</a></h3>' +
       '<p class="hl-when">' + esc(p.when) + '<br>' + esc(p.where) + '</p>' +
-      (p.clash && p.clash.length ? '<p class="hl-clash">' + esc("Runs into " + clashLine(p.clash[0]) + " on your calendar") + '</p>' : '') +
+      (p.clash && p.clash.length ? '<p class="hl-clash">' + esc(clashSentence(p.clash[0])) + '</p>' : '') +
       '<p class="hl-why">' + esc(p.item.star) + '</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:auto">' +
       '<button class="pickbtn" style="margin-top:0" data-pick="' + esc(p.k) + '" aria-pressed="' + (on?'true':'false') + '">' +
@@ -2237,7 +2291,7 @@ function renderDays(){
 
     if (!total) bandsHtml = '<p class="empty-band">Nothing matches the current filters on ' + esc(d.name) + '.</p>';
     bandsHtml = busyStrip(d.key) + bandsHtml;
-    var away = busyVisible(d.key).some(function(b){ return b.allDay; });
+    var flag = dayFlag(d.key);
 
     var dayDone = d.date < todayISO();
     var shut = isFolded(d);
@@ -2248,7 +2302,7 @@ function renderDays(){
         'title="' + (shut ? 'Show' : 'Hide') + ' ' + esc(d.name) + '">' +
       '<span class="dnum">' + esc(d.name) + '</span>' +
       (isToday ? '<span class="today-flag">Today</span>' : '') +
-      (away ? '<span class="busy-flag">Busy all day</span>' : '') +
+      (flag ? '<span class="busy-flag">' + esc(flag) + '</span>' : '') +
       '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span>' +
       '<span class="day-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -2295,10 +2349,8 @@ function rowHtml(e, band){
   var clashing = (times.length ? times : [null]).filter(function(t){ return timedAt(t).length; });
   if (!rowOff && clashing.length) {
     var hit = timedAt(clashing[0])[0];
-    var which = times.length > 1 && clashing.length < times.length
-      ? "The " + clashing.map(fmt).join(" and ") + " runs into "
-      : "Runs into ";
-    body += '<p class="ev-clash">' + esc(which + clashLine(hit) + " on your calendar") + '</p>';
+    var some = times.length > 1 && clashing.length < times.length ? clashing.map(fmt).join(" and ") : null;
+    body += '<p class="ev-clash">' + esc(clashSentence(hit, some)) + '</p>';
   }
   var cc = function(t){ return clashesAt(e, t).length ? " clash" : ""; };
 
@@ -2520,7 +2572,7 @@ function renderPlan(){
   DAYKEYS.forEach(function(dk){
     /* your calendar sits among the picks in time order, so a gap that
        looked free and isn't shows up here too */
-    var cal = busyVisible(dk);
+    var cal = calendarVisible(dk);
     if (!p[dk].length && !cal.length) return;
     var d = DAYMAP[dk];
     html += '<div class="plan-day"><h3>' + esc(d.name) + ' ' + esc(d.num.replace(/^\w+\s/,"")) + '</h3>';
@@ -2542,9 +2594,11 @@ function renderPlan(){
         html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(lastPick.r.item.title) +
                 ' by about ' + (lastPick.at + (lastPick.r.item.dur || 120) - x.at) + ' min — one of these has to go</span></div>';
       } else if (prev && prev.at != null && x.at != null) {
+        /* no gap is worked out across another clock or an away stretch */
+        var odd = function(y){ return y.b && (y.b.zone || y.b.away); };
         var end = prev.b ? busyEnd(prev.b) : prev.at + (prev.r.item.dur || 120);
         var g = x.at - end;
-        if (g >= 0) html += gapHtml(g, prev.b || x.b ? null : travelRel(prev.r.item, x.r.item));
+        if (g >= 0 && !odd(prev) && !odd(x)) html += gapHtml(g, prev.b || x.b ? null : travelRel(prev.r.item, x.r.item));
       }
       if (!x.b && x.at != null) lastPick = x;
       if (x.b) { html += busySlotHtml(x.b); return; }
@@ -2559,10 +2613,13 @@ function renderPlan(){
 }
 
 function busySlotHtml(b){
-  var line = (b.allDay ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + "on your calendar" +
-    (b.where ? " \u00b7 " + b.where : "");
-  return '<div class="slot busy-slot">' +
-    '<span class="stime">' + esc(b.allDay ? "all day" : fmtClock(b.from)) + '</span>' +
+  var line = b.away
+    ? (b.allDay || b.from === "00:00" || b.to === "24:00" ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + (b.where || "not in Montreal")
+    : (b.allDay ? "" : "until " + fmtClock(b.to) + (b.zone ? " " + b.zone : "") + " \u00b7 ") + "on your calendar" +
+      (b.where ? " \u00b7 " + b.where : "");
+  var start = b.allDay ? "all day" : b.away && b.from === "00:00" ? "until " + fmtClock(b.to) : fmtClock(b.from);
+  return '<div class="slot busy-slot' + (b.away ? ' away' : '') + '">' +
+    '<span class="stime">' + esc(start) + '</span>' +
     '<span><span class="sname">' + esc(b.title) + '</span><br>' +
     '<span class="swhere">' + esc(line) + '</span></span><span></span></div>';
 }
@@ -2584,7 +2641,7 @@ function slotHtml(time, r, where, k, clash){
     '<span class="stime">' + esc(time) + '</span>' +
     '<span><span class="sname">' + titleLink(item) + '</span><br>' +
     '<span class="swhere">' + esc(where) + '</span>' +
-    (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 runs into " + clashLine(clash[0]) + " on your calendar") + '</span>' : '') +
+    (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 " + clashSentence(clash[0])) + '</span>' : '') +
     '</span>' +
     '<span class="sdrop">' +
       '<a class="calbtn" href="' + esc(gcalUrl(r)) + '" target="_blank" rel="noopener" ' +
@@ -2895,7 +2952,9 @@ document.addEventListener("click", function(ev){
   else {
     picks[k] = true; recordAdd(k);
     var pr = lookupKey(k), pc = pr && pr.kind === "event" ? clashesAt(pr.item, pr.time) : [];
-    toast(pc.length ? "Added \u2014 but it runs into \u201c" + pc[0].title + "\u201d" : "Added to your plan");
+    toast(!pc.length ? "Added to your plan"
+      : pc[0].away ? "Added \u2014 but you\u2019re away then"
+      : "Added \u2014 but it runs into \u201c" + pc[0].title + "\u201d");
   }
   persist();
   renderAll();
