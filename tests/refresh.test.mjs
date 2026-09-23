@@ -9,7 +9,7 @@ import assert from "node:assert/strict";
 process.env.REFRESH_SECRET = "test-secret";
 
 const url = (p) => new URL("../" + p, import.meta.url).href;
-const S = { stored: null, setThrows: false, locateThrows: false };
+const S = { stored: null, prev: null, setThrows: false, locateThrows: false };
 
 /* Delegate to the real location layer, with a switch to break it. */
 const realLocation = await import(url("lib/location.js"));
@@ -25,7 +25,7 @@ mock.module(url("lib/location.js"), {
 
 mock.module(url("lib/store.js"), {
   namedExports: {
-    getDoc: async () => null,
+    getDoc: async () => S.prev,
     setDoc: async (path, data) => {
       if (S.setThrows) throw new Error("redis down");
       S.stored = { path, data };
@@ -94,7 +94,7 @@ test("a record with nothing to locate is stored as it came", async () => {
 test("the run reports its coverage", async () => {
   const res = await post(payload());
   assert.deepEqual(res.body.located, { total: 4, withArea: 3, withMetro: 2, withLine: 1 });
-  assert.deepEqual(res.body.counts, { standing: 1, events: 2, afield: 1 });
+  assert.deepEqual(res.body.counts, { standing: 1, events: 2, afield: 1, busy: 0 });
 });
 
 test("an empty run is still refused, structure or not", async () => {
@@ -132,4 +132,45 @@ test("a broken location layer costs structure, never the listings", async () => 
   assert.equal(S.stored.data.STANDING[0].loc, undefined, "no structure, but the listing is there");
   assert.equal(S.stored.data.EVENTS.length, 2);
   assert.equal(res.body.located, null, "and it does not claim coverage it did not get");
+});
+
+/* BUSY: the owner's calendar for the same days. A run that could not read
+   the calendar sends none, and must not make the weekend look free. */
+const BUSY_WEEKEND = { id: "2026-09-26", days: [{ key: "sat", date: "2026-09-26" }, { key: "sun", date: "2026-09-27" }] };
+const withBusy = (busy) => {
+  const b = { ...payload(), WEEKEND: BUSY_WEEKEND };
+  if (busy !== undefined) b.BUSY = busy;
+  return b;
+};
+
+test("calendar events are stored cut to the weekend's days", async () => {
+  S.prev = null;
+  const res = await post(withBusy([
+    { id: "trip", title: "Trip to Quebec City", start: "2026-09-26", end: "2026-09-28" }
+  ]));
+  assert.equal(res.code, 200);
+  assert.equal(res.body.counts.busy, 2);
+  assert.deepEqual(S.stored.data.BUSY.map((b) => [b.day, b.allDay]), [["sat", true], ["sun", true]]);
+});
+
+test("a run with no BUSY keeps what the last run found for the same weekend", async () => {
+  const kept = [{ id: "x~sat", day: "sat", from: "10:00", to: "12:00", allDay: false, title: "Dentist", where: "" }];
+  S.prev = { WEEKEND: BUSY_WEEKEND, BUSY: kept };
+  await post(withBusy(undefined));
+  assert.deepEqual(S.stored.data.BUSY, kept);
+  S.prev = null;
+});
+
+test("a run with no BUSY does not carry last weekend's calendar into a new one", async () => {
+  S.prev = { WEEKEND: { id: "2026-09-19", days: [] }, BUSY: [{ id: "old~sat", day: "sat" }] };
+  await post(withBusy(undefined));
+  assert.deepEqual(S.stored.data.BUSY, []);
+  S.prev = null;
+});
+
+test("an empty BUSY is an answer, and clears the weekend", async () => {
+  S.prev = { WEEKEND: BUSY_WEEKEND, BUSY: [{ id: "x~sat", day: "sat" }] };
+  await post(withBusy([]));
+  assert.deepEqual(S.stored.data.BUSY, []);
+  S.prev = null;
 });

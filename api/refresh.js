@@ -2,6 +2,7 @@ import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc, setDoc } from "../lib/store.js";
 import { pruneBoard } from "../lib/prune.js";
 import { locateAll, coverage } from "../lib/location.js";
+import { busyForWeekend } from "../lib/busy.js";
 
 /* The daily refresh POSTs the four data blocks here instead of
    republishing the artifact's HTML. That is what retires the
@@ -24,7 +25,8 @@ export default async function handler(req, res) {
         counts: doc
           ? { standing: (doc.STANDING || []).length,
               events: (doc.EVENTS || []).length,
-              afield: (doc.AFIELD || []).length }
+              afield: (doc.AFIELD || []).length,
+              busy: (doc.BUSY || []).length }
           : null
       });
     } catch (e) {
@@ -73,8 +75,24 @@ export default async function handler(req, res) {
       standing = STANDING; events = EVENTS; afield = AFIELD;
     }
 
+    /* The owner's calendar for the same days. Optional: a run that could
+       not read the calendar sends no BUSY at all, and then whatever the
+       last run found for this same weekend stands, rather than the board
+       quietly claiming the weekend is free. An empty array is a real
+       answer and clears it. */
+    let busy = [];
+    if (Array.isArray(b.BUSY)) {
+      try { busy = busyForWeekend(b.BUSY, WEEKEND.days); }
+      catch (e) { console.error("[refresh] busy", e); busy = []; }
+    } else {
+      try {
+        const prev = await getDoc("board/current");
+        if (prev && prev.WEEKEND && prev.WEEKEND.id === WEEKEND.id && Array.isArray(prev.BUSY)) busy = prev.BUSY;
+      } catch (e) { busy = []; }
+    }
+
     await setDoc("board/current", {
-      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield,
+      WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy,
       updatedAt: new Date().toISOString()
     });
 
@@ -101,7 +119,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       weekendId: WEEKEND.id,
-      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length },
+      counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length, busy: busy.length },
       located,
       pruned
     });
