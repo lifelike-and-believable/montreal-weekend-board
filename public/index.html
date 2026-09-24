@@ -1790,6 +1790,14 @@ function clashesAt(e, t){
     return st < busyEnd(b) && busyStart(b) < en;
   });
 }
+/* The one a line should name when a showing runs into several: being
+   away outranks everything, then a timed entry (the specific reason),
+   then an all-day one. */
+function mainClash(list){
+  if (!list || !list.length) return null;
+  return list.filter(function(b){ return b.away; })[0] ||
+         list.filter(function(b){ return !b.allDay; })[0] || list[0];
+}
 function clashLine(b){
   return "\u201c" + b.title + "\u201d (" + (b.allDay ? "all day" : busyWhen(b)) + ")";
 }
@@ -2237,7 +2245,7 @@ function renderHighlights(){
       '<span class="hl-cat">' + esc(c.label) + (p.item.free ? ' · Free' : '') + '</span>' +
       '<h3 class="hl-title"><a href="' + esc(p.item.url) + '" target="_blank" rel="noopener">' + esc(p.item.title) + '</a></h3>' +
       '<p class="hl-when">' + esc(p.when) + '<br>' + esc(p.where) + '</p>' +
-      (p.clash && p.clash.length ? '<p class="hl-clash">' + esc(clashSentence(p.clash[0])) + '</p>' : '') +
+      (p.clash && p.clash.length ? '<p class="hl-clash">' + esc(clashSentence(mainClash(p.clash))) + '</p>' : '') +
       '<p class="hl-why">' + esc(p.item.star) + '</p>' +
       '<div style="display:flex;gap:8px;align-items:center;margin-top:auto">' +
       '<button class="pickbtn" style="margin-top:0" data-pick="' + esc(p.k) + '" aria-pressed="' + (on?'true':'false') + '">' +
@@ -2347,7 +2355,7 @@ function rowHtml(e, band){
      opened straight from its fold may never show its header */
   var clashing = (times.length ? times : [null]).filter(function(t){ return clashesAt(e, t).length; });
   if (!rowOff && clashing.length) {
-    var hit = clashesAt(e, clashing[0])[0];
+    var hit = mainClash(clashesAt(e, clashing[0]));
     var some = times.length > 1 && clashing.length < times.length ? clashing.map(fmt).join(" and ") : null;
     body += '<p class="ev-clash">' + esc(clashSentence(hit, some)) + '</p>';
   }
@@ -2640,7 +2648,7 @@ function slotHtml(time, r, where, k, clash){
     '<span class="stime">' + esc(time) + '</span>' +
     '<span><span class="sname">' + titleLink(item) + '</span><br>' +
     '<span class="swhere">' + esc(where) + '</span>' +
-    (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 " + clashSentence(clash[0])) + '</span>' : '') +
+    (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 " + clashSentence(mainClash(clash))) + '</span>' : '') +
     '</span>' +
     '<span class="sdrop">' +
       '<a class="calbtn" href="' + esc(gcalUrl(r)) + '" target="_blank" rel="noopener" ' +
@@ -2951,9 +2959,10 @@ document.addEventListener("click", function(ev){
   else {
     picks[k] = true; recordAdd(k);
     var pr = lookupKey(k), pc = pr && pr.kind === "event" ? clashesAt(pr.item, pr.time) : [];
-    toast(!pc.length ? "Added to your plan"
-      : pc[0].away ? "Added \u2014 but you\u2019re away then"
-      : "Added \u2014 but it runs into \u201c" + pc[0].title + "\u201d");
+    var pm = mainClash(pc);
+    toast(!pm ? "Added to your plan"
+      : pm.away ? "Added \u2014 but you\u2019re away then"
+      : "Added \u2014 but it runs into \u201c" + pm.title + "\u201d");
   }
   persist();
   renderAll();

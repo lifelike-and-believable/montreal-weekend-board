@@ -91,3 +91,15 @@ test("away reads as a stretch, and a clash with it says you are away", () => {
     "The 7:00 p.m. is while you\u2019re away (Revelstoke)");
   assert.match(clashSentence(B({ from: "10:00", to: "11:00" })), /^Runs into \u201cDentist\u201d/);
 });
+
+const mainClash = build("mainClash");
+
+test("a line names the most telling clash: away, then timed, then all day", () => {
+  const allDay = B({ allDay: true, title: "Birthday" });
+  const timed = B({ from: "10:00", to: "11:00", title: "Dentist" });
+  const away = B({ away: true, allDay: true, title: "Out of town" });
+  assert.equal(mainClash([allDay, timed]).title, "Dentist", "the timed entry, though all-day sorts first");
+  assert.equal(mainClash([allDay, timed, away]).title, "Out of town");
+  assert.equal(mainClash([allDay]).title, "Birthday");
+  assert.equal(mainClash([]), null);
+});
