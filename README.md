@@ -263,9 +263,9 @@ On the board:
 
 - each day opens with **On your calendar**, and a day with an all-day
   entry says **Busy all day** in its header, folded or not
-- a showing that runs into a timed entry (from its start, for `dur` or two
-  hours) says so, and its Add button is dashed; on an all-day day only the
-  buttons are marked, since the header already says it
+- a showing that runs into an entry (from its start, for `dur` or two
+  hours; an all-day entry catches every showing that day) says so above
+  its Add button, which is dashed
 - the itinerary threads your calendar through the picks in time order and
   flags a pick that runs into it; "Copy plan" leaves it out, since that
   text is often sent to someone else
@@ -301,8 +301,9 @@ or replaces them together.
 
 On the board an away stretch sits first in "On your calendar", hatched;
 the day header says **Away · Revelstoke**, **Away from 7:30 a.m.** or
-**Back 3:00 p.m.**; listings inside it have dashed buttons (and, on a day
-you are only partly away, a line saying so); the itinerary carries it
+**Back 3:00 p.m.**; listings inside it have dashed buttons and a line
+saying so, on every row, since a day is often opened straight from its
+fold; the itinerary carries it
 like any calendar entry and flags a pick inside it. ✕ ignores a stretch on
 this board, as it does a calendar entry.
 
