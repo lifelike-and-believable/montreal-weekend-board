@@ -2343,12 +2343,11 @@ function rowHtml(e, band){
   if (e.note) body += '<p class="ev-note" style="margin:0">' + esc(e.note) + '</p>';
 
   var rowOff = isHidden(rowHideKey(e, band)) || isHidden(evId(e));
-  /* an all-day entry is said once, at the top of the day; the rows only
-     name the timed things they run into */
-  var timedAt = function(t){ return clashesAt(e, t).filter(function(b){ return !b.allDay; }); };
-  var clashing = (times.length ? times : [null]).filter(function(t){ return timedAt(t).length; });
+  /* every row says what it runs into, all-day entries included: a day
+     opened straight from its fold may never show its header */
+  var clashing = (times.length ? times : [null]).filter(function(t){ return clashesAt(e, t).length; });
   if (!rowOff && clashing.length) {
-    var hit = timedAt(clashing[0])[0];
+    var hit = clashesAt(e, clashing[0])[0];
     var some = times.length > 1 && clashing.length < times.length ? clashing.map(fmt).join(" and ") : null;
     body += '<p class="ev-clash">' + esc(clashSentence(hit, some)) + '</p>';
   }
