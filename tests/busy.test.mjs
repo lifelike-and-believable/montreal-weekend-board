@@ -107,3 +107,25 @@ test("overlapping away pieces on a day are one stretch", () => {
   ], [], DAYS);
   assert.deepEqual(away.map((a) => [a.day, a.from, a.to, a.where]), [["sat", "09:00", "18:00", "Quebec"]]);
 });
+
+/* A Montreal location, written the way listings write `hood`, gets the
+   same structure the listings get: métro dots on the board, and something
+   for the itinerary to measure the next pick against. */
+test("a hood on a calendar entry is read into loc, like a listing's", () => {
+  const [b] = cut({ id: "l", title: "Lunch", location: "5240 av. du Parc",
+    hood: "Mile End · métro Laurier",
+    start: "2026-09-26T12:00:00-04:00", end: "2026-09-26T13:30:00-04:00" });
+  assert.equal(b.hood, "Mile End · métro Laurier");
+  assert.equal(b.loc.areaKey, "mile-end");
+  assert.equal(b.loc.metro, "Laurier");
+  assert.deepEqual(b.loc.lines, ["orange"]);
+});
+
+test("no hood, no loc; and none is kept for an entry on another clock", () => {
+  const [plain] = cut({ title: "Call", start: "2026-09-26T10:00:00-04:00", end: "2026-09-26T11:00:00-04:00" });
+  assert.equal(plain.hood, undefined);
+  assert.equal(plain.loc, undefined);
+  const [far] = cut({ title: "Gig", timeZone: "America/Vancouver", hood: "Mile End · métro Laurier",
+    start: "2026-09-26T20:00:00-07:00", end: "2026-09-26T21:00:00-07:00" });
+  assert.equal(far.hood, undefined, "a Montreal hood on a Revelstoke gig is a mistake, not a place");
+});

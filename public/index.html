@@ -626,6 +626,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .busy-body{display:flex;flex-direction:column;gap:2px;min-width:0;overflow-wrap:break-word}
 .busy-when{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--brick);letter-spacing:-.02em}
 .busy-what{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 96,"wght" 700;font-size:14.5px;line-height:1.25}
+.busy-hood{font-size:13px;color:var(--ink-3);line-height:1.35}
 .busy-where{font-family:inherit;font-variation-settings:"wght" 400;color:var(--ink-2)}
 .busy-flag{
   font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
@@ -1836,7 +1837,8 @@ function busyStrip(dk){
       return '<div class="busy' + (b.away ? ' away' : '') + (off ? ' is-hidden' : '') + '">' +
         '<span class="busy-body"><span class="busy-when">' + esc(busyWhen(b)) + '</span>' +
         '<span class="busy-what">' + esc(b.title) +
-          (b.where ? '<span class="busy-where"> \u00b7 ' + esc(b.where) + '</span>' : '') + '</span></span>' +
+          (b.where ? '<span class="busy-where"> \u00b7 ' + esc(b.where) + '</span>' : '') + '</span>' +
+          (b.hood ? '<span class="busy-hood hood">' + hoodHtml(b) + '</span>' : '') + '</span>' +
         (off
           ? '<button class="restore" data-unhide="' + esc(hk) + '">Bring back</button>'
           : '<button class="hidebtn" data-hide="' + esc(hk) + '" title="Ignore this on the board" aria-label="Ignore ' + esc(b.title) + '">\u2715</button>') +
@@ -2611,7 +2613,10 @@ function renderPlan(){
         var odd = function(y){ return y.b && (y.b.zone || y.b.away); };
         var end = prev.b ? busyEnd(prev.b) : prev.at + (prev.r.item.dur || 120);
         var g = x.at - end;
-        if (g >= 0 && !odd(prev) && !odd(x)) html += gapHtml(g, prev.b || x.b ? null : travelRel(prev.r.item, x.r.item));
+        /* a calendar entry with a Montreal hood carries loc like a listing,
+           so the gap to or from it can say where as well as how long */
+        var at = function(y){ return y.b || y.r.item; };
+        if (g >= 0 && !odd(prev) && !odd(x)) html += gapHtml(g, travelRel(at(prev), at(x)));
       }
       if (!x.b && x.at != null) lastPick = x;
       if (x.b) { html += busySlotHtml(x.b); return; }
@@ -2629,7 +2634,7 @@ function busySlotHtml(b){
   var line = b.away
     ? (b.allDay || b.from === "00:00" || b.to === "24:00" ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + (b.where || "not in Montreal")
     : (b.allDay ? "" : "until " + fmtClock(b.to) + (b.zone ? " " + b.zone : "") + " \u00b7 ") + "on your calendar" +
-      (b.where ? " \u00b7 " + b.where : "");
+      (b.where ? " \u00b7 " + b.where : "") + (b.hood ? " \u00b7 " + b.hood : "");
   var start = b.allDay ? "all day" : b.away && b.from === "00:00" ? "until " + fmtClock(b.to) : fmtClock(b.from);
   return '<div class="slot busy-slot' + (b.away ? ' away' : '') + '">' +
     '<span class="stime">' + esc(start) + '</span>' +
