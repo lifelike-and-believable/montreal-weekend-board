@@ -1795,8 +1795,12 @@ function clashesAt(e, t){
    then an all-day one. */
 function mainClash(list){
   if (!list || !list.length) return null;
-  return list.filter(function(b){ return b.away; })[0] ||
-         list.filter(function(b){ return !b.allDay; })[0] || list[0];
+  var timed = null;
+  for (var i = 0; i < list.length; i++) {
+    if (list[i].away) return list[i];
+    if (!timed && !list[i].allDay) timed = list[i];
+  }
+  return timed || list[0];
 }
 function clashLine(b){
   return "\u201c" + b.title + "\u201d (" + (b.allDay ? "all day" : busyWhen(b)) + ")";
