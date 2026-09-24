@@ -19,7 +19,8 @@ mock.module(url("lib/location.js"), {
       if (S.locateThrows) throw new Error("location layer exploded");
       return realLocation.locateAll(list);
     },
-    coverage: (lists) => realLocation.coverage(lists)
+    coverage: (lists) => realLocation.coverage(lists),
+    parseHood: (h) => realLocation.parseHood(h)
   }
 });
 

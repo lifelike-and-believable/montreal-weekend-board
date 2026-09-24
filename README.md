@@ -277,6 +277,23 @@ whose title answers a listing's (the same matching the poster hand-over
 uses, or exactly "Title (Sub)" as that button names it) is treated as the
 listing and not shown.
 
+#### Where your calendar entries are
+
+A calendar event's location is usually a street address or a venue name,
+which the location parser (built for `hood`) cannot place. So the routine,
+which knows the city as well as it knows the listings, adds a `hood` in
+the listings' own format when an event is in Montreal and it is sure:
+
+    { "title": "Coffee with Sam", "location": "Café Olimpico, 124 rue Saint-Viateur O",
+      "hood": "Mile End · métro Laurier", ... }
+
+`busyForWeekend` reads it into `loc` with the same `parseHood` the
+listings go through. The entry then shows its neighbourhood and métro
+line dots in "On your calendar" and in the itinerary, and the itinerary's
+gap lines measure to and from it like any pick ("15 min — both in Mile
+End", "direct on the orange line, tight"). An entry on another clock
+keeps no `hood`: a Montreal station on a Revelstoke gig is a mistake.
+
 #### Travelling
 
 An event with a time zone of its own (the routine sends Google's
