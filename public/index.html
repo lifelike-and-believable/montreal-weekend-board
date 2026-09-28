@@ -637,6 +637,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 /* rides with the button pinned to the card's foot, as on the other cards */
 .hl-clash{margin:auto 0 -2px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;color:var(--brick-on-panel)}
 .hl-clash + div{margin-top:0 !important}
+/* an occasion (marked free in the calendar): worth planning around, not in the way */
+.busy.occasion{background:var(--accent-wash);border-left-color:var(--accent)}
+.busy.occasion .busy-when{color:var(--accent)}
+.busy-flag.occasion{border-color:var(--accent);color:var(--accent)}
+.slot.busy-slot.occasion .stime,.slot.busy-slot.occasion .sname{color:var(--accent)}
 .slot.busy-slot .stime{color:var(--brick)}
 .slot.busy-slot .sname{color:var(--brick)}
 .slot .sclash{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--brick)}
@@ -1783,9 +1788,17 @@ function calendarVisible(dk){
 /* What a showing would run into: from its start for its length (dur, or
    two hours). A showing with no published time only runs into a day you
    are away for all of. */
+/* An entry marked "free" in the calendar (an anniversary, a birthday) is
+   shown as an occasion to plan around, never as time that is taken. */
+function blockingVisible(dk){
+  return calendarVisible(dk).filter(function(b){ return !b.free; });
+}
+function occasionsOn(dk){
+  return calendarVisible(dk).filter(function(b){ return b.free && !b.away; });
+}
 function clashesAt(e, t){
   if (!e || !e.day) return [];
-  return calendarVisible(e.day).filter(function(b){
+  return blockingVisible(e.day).filter(function(b){
     if (b.zone) return false;
     if (b.allDay) return true;
     if (!t) return false;
@@ -1819,7 +1832,7 @@ function clashSentence(b, times){
 }
 /* The day header's word on it: away beats busy. */
 function dayFlag(dk){
-  var cal = calendarVisible(dk);
+  var cal = blockingVisible(dk);
   var aw = cal.filter(function(b){ return b.away; });
   if (aw.length) {
     var a = aw[0], where = a.where ? " \u00b7 " + a.where : "";
@@ -1834,8 +1847,8 @@ function busyStrip(dk){
   return '<div class="busy-strip"><p class="band-label">On your calendar<span class="bct">' + list.length + '</span></p>' +
     list.map(function(b){
       var hk = busyKey(b), off = isHidden(hk);
-      return '<div class="busy' + (b.away ? ' away' : '') + (off ? ' is-hidden' : '') + '">' +
-        '<span class="busy-body"><span class="busy-when">' + esc(busyWhen(b)) + '</span>' +
+      return '<div class="busy' + (b.away ? ' away' : '') + (b.free ? ' occasion' : '') + (off ? ' is-hidden' : '') + '">' +
+        '<span class="busy-body"><span class="busy-when">' + esc(busyWhen(b) + (b.free ? " \u00b7 doesn\u2019t block anything" : "")) + '</span>' +
         '<span class="busy-what">' + esc(b.title) +
           (b.where ? '<span class="busy-where"> \u00b7 ' + esc(b.where) + '</span>' : '') + '</span>' +
           (b.hood ? '<span class="busy-hood hood">' + hoodHtml(b) + '</span>' : '') + '</span>' +
@@ -2318,7 +2331,8 @@ function renderDays(){
         'title="' + (shut ? 'Show' : 'Hide') + ' ' + esc(d.name) + '">' +
       '<span class="dnum">' + esc(d.name) + '</span>' +
       (isToday ? '<span class="today-flag">Today</span>' : '') +
-      (flag ? '<span class="busy-flag">' + esc(flag) + '</span>' : '') +
+      (flag ? '<span class="busy-flag">' + esc(flag) + '</span>'
+        : occasionsOn(d.key).length ? '<span class="busy-flag occasion">' + esc(occasionsOn(d.key)[0].title) + '</span>' : '') +
       '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span>' +
       '<span class="day-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -2633,10 +2647,10 @@ function renderPlan(){
 function busySlotHtml(b){
   var line = b.away
     ? (b.allDay || b.from === "00:00" || b.to === "24:00" ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + (b.where || "not in Montreal")
-    : (b.allDay ? "" : "until " + fmtClock(b.to) + (b.zone ? " " + b.zone : "") + " \u00b7 ") + "on your calendar" +
+    : (b.allDay ? "" : "until " + fmtClock(b.to) + (b.zone ? " " + b.zone : "") + " \u00b7 ") + (b.free ? "occasion on your calendar" : "on your calendar") +
       (b.where ? " \u00b7 " + b.where : "") + (b.hood ? " \u00b7 " + b.hood : "");
   var start = b.allDay ? "all day" : b.away && b.from === "00:00" ? "until " + fmtClock(b.to) : fmtClock(b.from);
-  return '<div class="slot busy-slot' + (b.away ? ' away' : '') + '">' +
+  return '<div class="slot busy-slot' + (b.away ? ' away' : '') + (b.free ? ' occasion' : '') + '">' +
     '<span class="stime">' + esc(start) + '</span>' +
     '<span><span class="sname">' + esc(b.title) + '</span><br>' +
     '<span class="swhere">' + esc(line) + '</span></span><span></span></div>';
