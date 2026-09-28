@@ -17,7 +17,8 @@ const B = (o) => ({ id: "x~sat", day: "sat", allDay: false, title: "Dentist", wh
 
 function clashes(busy) {
   const calendarVisible = (dk) => busy.filter((b) => b.day === dk);
-  return build("clashesAt", { calendarVisible, mins, busyStart, busyEnd });
+  const blockingVisible = build("blockingVisible", { calendarVisible });
+  return build("clashesAt", { blockingVisible, mins, busyStart, busyEnd });
 }
 
 test("a showing runs into what overlaps it, for its length", () => {
@@ -102,4 +103,17 @@ test("a line names the most telling clash: away, then timed, then all day", () =
   assert.equal(mainClash([allDay, timed, away]).title, "Out of town");
   assert.equal(mainClash([allDay]).title, "Birthday");
   assert.equal(mainClash([]), null);
+});
+
+test("an occasion marked free in the calendar blocks nothing", () => {
+  const at = clashes([B({ allDay: true, from: null, to: null, title: "Wedding anniversary", free: true })]);
+  assert.equal(at({ day: "sat" }, "20:00").length, 0);
+  assert.equal(at({ day: "sat" }, null).length, 0);
+});
+
+test("an occasion is still listed as one, and busy time is not", () => {
+  const busy = [B({ allDay: true, from: null, to: null, title: "Anniversary", free: true }), B({ id: "d~sat", from: "10:00", to: "11:00" })];
+  const calendarVisible = (dk) => busy.filter((b) => b.day === dk);
+  const occasionsOn = build("occasionsOn", { calendarVisible });
+  assert.deepEqual(occasionsOn("sat").map((b) => b.title), ["Anniversary"]);
 });

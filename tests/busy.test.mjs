@@ -129,3 +129,10 @@ test("no hood, no loc; and none is kept for an entry on another clock", () => {
     start: "2026-09-26T20:00:00-07:00", end: "2026-09-26T21:00:00-07:00" });
   assert.equal(far.hood, undefined, "a Montreal hood on a Revelstoke gig is a mistake, not a place");
 });
+
+test("an event marked free keeps its flag, and a busy one carries none", () => {
+  const [f] = cut({ id: "a", title: "Anniversary", start: "2026-09-26", end: "2026-09-27", free: true });
+  assert.equal(f.free, true);
+  const [b] = cut({ id: "b", title: "Dentist", start: "2026-09-26T10:00:00-04:00", end: "2026-09-26T11:00:00-04:00" });
+  assert.equal("free" in b, false);
+});
