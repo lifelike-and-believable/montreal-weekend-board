@@ -2473,20 +2473,24 @@ function isPast(dayKey, t){
 /* ============================================================
    Itinerary
    ============================================================ */
+/* A pick can name a captured poster as well as a refreshed listing, so
+   both pools are searched, as starLookup does below. */
 function lookupKey(k){
   var at = k.lastIndexOf("@");
   var idPart = k.slice(0, at), t = k.slice(at+1);
+  var sp = splitSpotted();
   if (idPart.indexOf("standing|") === 0 || idPart.indexOf("afield|") === 0) {
     var isAway = idPart.indexOf("afield|") === 0;
-    var pool = isAway ? AFIELD : STANDING;
+    var pool = isAway ? AFIELD : STANDING.concat(sp.standing);
     var sid = idPart.slice(idPart.indexOf("|") + 1);
     var found = pool.filter(function(x){ return x.id === sid; })[0];
     if (!found) return null;
     return { kind:"standing", item:found, time:null, day:null, away:isAway };
   }
-  for (var i=0;i<EVENTS.length;i++){
-    if (evId(EVENTS[i]) === idPart) {
-      return { kind:"event", item:EVENTS[i], time: t === "tba" ? null : t, day: EVENTS[i].day };
+  var evs = EVENTS.concat(sp.events);
+  for (var i=0;i<evs.length;i++){
+    if (evId(evs[i]) === idPart) {
+      return { kind:"event", item:evs[i], time: t === "tba" ? null : t, day: evs[i].day };
     }
   }
   return null;
