@@ -2598,7 +2598,7 @@ function renderPlan(){
     html += '<div class="plan-day"><h3>Any time this weekend · trips</h3>' +
       p.standing.map(function(r){
         return slotHtml(r.away ? "trip" : "—", r,
-          (r.item.venue || r.item.region) + " · " + r.item.when,
+          r.item.venue || r.item.region, r.item.when,
           (r.away ? "afield|" : "standing|") + r.item.id + "@tba");
       }).join("") + '</div>';
   }
@@ -2639,7 +2639,7 @@ function renderPlan(){
       if (!x.b && x.at != null) lastPick = x;
       if (x.b) { html += busySlotHtml(x.b); return; }
       var r = x.r;
-      html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue + (r.item.hood ? " · " + r.item.hood : ""),
+      html += slotHtml(r.time ? fmt(r.time) : "time TBC", r, r.item.venue, "",
                        key(r.item, r.time), clashesAt(r.item, r.time));
     });
     html += '</div>';
@@ -2652,12 +2652,13 @@ function busySlotHtml(b){
   var line = b.away
     ? (b.allDay || b.from === "00:00" || b.to === "24:00" ? "" : "until " + fmtClock(b.to) + " \u00b7 ") + (b.where || "not in Montreal")
     : (b.allDay ? "" : "until " + fmtClock(b.to) + (b.zone ? " " + b.zone : "") + " \u00b7 ") + (b.free ? "occasion on your calendar" : "on your calendar") +
-      (b.where ? " \u00b7 " + b.where : "") + (b.hood ? " \u00b7 " + b.hood : "");
+      (b.where ? " \u00b7 " + b.where : "");
   var start = b.allDay ? "all day" : b.away && b.from === "00:00" ? "until " + fmtClock(b.to) : fmtClock(b.from);
   return '<div class="slot busy-slot' + (b.away ? ' away' : '') + (b.free ? ' occasion' : '') + '">' +
     '<span class="stime">' + esc(start) + '</span>' +
     '<span><span class="sname">' + esc(b.title) + '</span><br>' +
-    '<span class="swhere">' + esc(line) + '</span></span><span></span></div>';
+    '<span class="swhere">' + esc(line) +
+      (b.hood && !b.away ? " \u00b7 " + '<span class="hood">' + hoodHtml(b) + '</span>' : "") + '</span></span><span></span></div>';
 }
 
 function fmtGap(m){
@@ -2666,8 +2667,13 @@ function fmtGap(m){
   return h + "h" + (r ? " " + r + "m" : "");
 }
 
-function slotHtml(time, r, where, k, clash){
+/* `place` is the venue (or region); the neighbourhood follows it with the
+   same métro dots the listings show, then `after` (a run's dates). */
+function slotHtml(time, r, place, after, k, clash){
   var item = r.item;
+  var where = esc(place || "") +
+    (item.hood ? (place ? " \u00b7 " : "") + '<span class="hood">' + hoodHtml(item) + '</span>' : "") +
+    (after ? " \u00b7 " + esc(after) : "");
   var over = false;
   if (r.time && r.day && DAYMAP[r.day]) {
     var dd = DAYMAP[r.day].date, td = todayISO();
@@ -2676,7 +2682,7 @@ function slotHtml(time, r, where, k, clash){
   return '<div class="slot' + (over ? ' is-over' : '') + '">' +
     '<span class="stime">' + esc(time) + '</span>' +
     '<span><span class="sname">' + titleLink(item) + '</span><br>' +
-    '<span class="swhere">' + esc(where) + '</span>' +
+    '<span class="swhere">' + where + '</span>' +
     (clash && clash.length ? '<br><span class="sclash">' + esc("\u26a0 " + clashSentence(mainClash(clash))) + '</span>' : '') +
     '</span>' +
     '<span class="sdrop">' +
