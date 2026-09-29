@@ -1,0 +1,26 @@
+# Runs the test suite on every pull request and on pushes to main, so a
+# failing test shows up next to the Vercel check instead of only on
+# someone's machine.
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # the tests use node:test module mocks, which need Node 22.3 or later
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
