@@ -1,5 +1,12 @@
 import { gate } from "../lib/auth.js";
 import { cleanPath, getDoc, setDoc, deleteDoc, listDocs } from "../lib/store.js";
+import { relocate } from "../lib/location.js";
+
+/* Posters are written here, not through the refresh, so they never pass
+   through the step that reads a listing's `hood` into `loc`, and without
+   `loc` the board has no line to colour. Read it on the way out instead:
+   derived, never stored, so an edited station is right on the next read. */
+const located = (p, doc) => (p === "spotted" || p.startsWith("spotted/") ? relocate(doc) : doc);
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
@@ -12,10 +19,11 @@ export default async function handler(req, res) {
   try {
     if (op === "get") {
       const doc = await getDoc(p);
-      return res.status(200).json({ id: p.split("/").pop(), data: doc });
+      return res.status(200).json({ id: p.split("/").pop(), data: doc && located(p, doc) });
     }
     if (op === "list") {
-      return res.status(200).json({ docs: await listDocs(p) });
+      const docs = await listDocs(p);
+      return res.status(200).json({ docs: docs.map((d) => ({ ...d, data: located(p, d.data) })) });
     }
     if (op === "set") {
       if (!data || typeof data !== "object") {

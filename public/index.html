@@ -1407,9 +1407,11 @@ function hoodHtml(item){
   var loc = item.loc;
   var lines = loc && loc.lines;
   if (!loc || !loc.metro || !lines || !lines.length) return esc(h);
+  /* typed by hand on a poster, it may be "metro" or "Métro" */
   var needle = "métro " + loc.metro;
-  var i = h.indexOf(needle);
+  var i = h.toLowerCase().replace(/metro /g, "métro ").indexOf(needle.toLowerCase());
   if (i < 0) return esc(h);
+  needle = h.slice(i, i + needle.length);
   var dots = "";
   for (var d = 0; d < lines.length; d++)
     dots += '<span class="mdot is-' + esc(lines[d]) + '"></span>';
@@ -1666,7 +1668,7 @@ function spottedAsEvent(rec, dayKey){
     day: dayKey, cat: rec.cat, title: rec.title, sub: rec.sub || "",
     times: rec.time ? [rec.time] : [], bandHint: rec.time ? null : "evening",
     dur: rec.dur || 120,
-    venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
+    venue: rec.venue || "Venue on the poster", hood: rec.hood || "", loc: rec.loc || null,
     url: normUrl(rec.url), note: rec.note || "",
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
     spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
@@ -1676,7 +1678,7 @@ function spottedAsStanding(rec){
   var from = rec.startDate, to = rec.endDate || rec.startDate;
   return {
     id: "spot-" + rec.id, cat: rec.cat, title: rec.title, url: normUrl(rec.url),
-    venue: rec.venue || "Venue on the poster", hood: rec.hood || "",
+    venue: rec.venue || "Venue on the poster", hood: rec.hood || "", loc: rec.loc || null,
     when: prettyDate(from) + (to && to !== from ? " – " + prettyDate(to) : ""),
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
     note: rec.note || "", spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
