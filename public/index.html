@@ -2301,7 +2301,7 @@ function wxLabel(code){
 function wxLine(iso){
   var w = WX[iso];
   if (!w) return "";
-  var bits = [w.hi + "° / " + w.lo + "°", wxLabel(w.code)];
+  var bits = [w.hi + "°F / " + w.lo + "°F", wxLabel(w.code)];
   if (w.pop >= 20) bits.push(w.pop + "% rain");
   return '<span class="dwx">' + esc(bits.filter(Boolean).join(" · ")) + '</span>';
 }
@@ -2309,7 +2309,7 @@ function loadWeather(){
   var first = WEEKEND.days[0].date, last = WEEKEND.days[WEEKEND.days.length-1].date;
   fetch("https://api.open-meteo.com/v1/forecast?latitude=45.5017&longitude=-73.5673" +
         "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
-        "&timezone=America%2FToronto&start_date=" + first + "&end_date=" + last)
+        "&temperature_unit=fahrenheit&timezone=America%2FToronto&start_date=" + first + "&end_date=" + last)
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(j){
       var d = j && j.daily;
