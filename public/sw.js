@@ -1,7 +1,7 @@
 /* Shell cache. The board's own data comes from /api, which is never
    cached: a stale pick or a stale spotted record would be worse than
    an empty one. The shell is cached so the board opens underground. */
-var VERSION = "wb-11";
+var VERSION = "wb-12";
 var SHELL = [
   "/", "/claude-shim.js", "/gate.js", "/board-data.js", "/manifest.webmanifest",
   "/icons/icon-192.png", "/icons/apple-touch-icon.png"
@@ -64,6 +64,8 @@ self.addEventListener("fetch", function(e){
   var url = new URL(req.url);
   var mine = url.origin === location.origin;
   if (mine && url.pathname.indexOf("/api/") === 0) return;
+  /* The forecast must always be live; never serve it from the cache. */
+  if (url.hostname === "api.open-meteo.com") return;
 
   /* Navigations: network first, the cached shell as the fallback. Every
      navigation resolves to the one shell document. */
