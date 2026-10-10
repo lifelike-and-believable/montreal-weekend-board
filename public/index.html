@@ -2301,7 +2301,7 @@ function wxLabel(code){
 function wxLine(iso){
   var w = WX[iso];
   if (!w) return "";
-  var bits = [w.hi + "°F / " + w.lo + "°F", wxLabel(w.code)];
+  var bits = [w.lo + "°F / " + w.hi + "°F", wxLabel(w.code)];
   if (w.pop >= 20) bits.push(w.pop + "% rain");
   return '<span class="dwx">' + esc(bits.filter(Boolean).join(" · ")) + '</span>';
 }
