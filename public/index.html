@@ -403,6 +403,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
   font-size:clamp(26px,4.4vw,38px);line-height:1;letter-spacing:-.02em;text-transform:uppercase;
 }
 .day-head .dsub{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);margin-left:auto;text-align:right;line-height:1.4}
+.day-head{flex-wrap:wrap}
+.day-head .dwx{
+  flex:0 0 100%;order:9;margin-top:6px;
+  font-family:"IBM Plex Mono",monospace;font-size:11px;line-height:1.4;color:var(--ink-2);
+}
 .today-flag{
   font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
   font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
@@ -2279,6 +2284,46 @@ function renderHighlights(){
   }).join("");
 }
 
+/* Abbreviated forecast under each day heading. Open-Meteo needs no key and
+   allows cross-origin reads; a failure or a date outside its range just
+   leaves the line out. */
+var WX = {};
+var WX_CODES = [
+  [[0], "Clear"], [[1], "Mostly clear"], [[2], "Partly cloudy"], [[3], "Overcast"],
+  [[45, 48], "Fog"], [[51, 53, 55, 56, 57], "Drizzle"],
+  [[61, 63, 65, 66, 67, 80, 81, 82], "Rain"], [[71, 73, 75, 77, 85, 86], "Snow"],
+  [[95, 96, 99], "Thunderstorms"]
+];
+function wxLabel(code){
+  for (var i=0;i<WX_CODES.length;i++) if (WX_CODES[i][0].indexOf(code) >= 0) return WX_CODES[i][1];
+  return "";
+}
+function wxLine(iso){
+  var w = WX[iso];
+  if (!w) return "";
+  var bits = [w.hi + "° / " + w.lo + "°", wxLabel(w.code)];
+  if (w.pop >= 20) bits.push(w.pop + "% rain");
+  return '<span class="dwx">' + esc(bits.filter(Boolean).join(" · ")) + '</span>';
+}
+function loadWeather(){
+  var first = WEEKEND.days[0].date, last = WEEKEND.days[WEEKEND.days.length-1].date;
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=45.5017&longitude=-73.5673" +
+        "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+        "&timezone=America%2FToronto&start_date=" + first + "&end_date=" + last)
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      var d = j && j.daily;
+      if (!d || !d.time) return;
+      d.time.forEach(function(t, i){
+        if (d.temperature_2m_max[i] == null || d.temperature_2m_min[i] == null) return;
+        WX[t] = { hi: Math.round(d.temperature_2m_max[i]), lo: Math.round(d.temperature_2m_min[i]),
+                  code: d.weather_code[i], pop: Math.round(d.precipitation_probability_max[i] || 0) };
+      });
+      renderDays();
+    })
+    .catch(function(){});
+}
+
 function renderDays(){
   elDays.innerHTML = WEEKEND.days.map(function(d){
     var pool = EVENTS.concat(splitSpotted().events);
@@ -2335,6 +2380,7 @@ function renderDays(){
       (isToday ? '<span class="today-flag">Today</span>' : '') +
       (flag ? '<span class="busy-flag">' + esc(flag) + '</span>'
         : occasionsOn(d.key).length ? '<span class="busy-flag occasion">' + esc(occasionsOn(d.key)[0].title) + '</span>' : '') +
+      wxLine(d.date) +
       '<span class="dsub">' + esc(d.num) + '<br>' + total + ' listing' + (total===1?'':'s') + '</span>' +
       '<span class="day-fold" aria-hidden="true"><svg viewBox="0 0 12 8" fill="none" ' +
         'stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
@@ -3183,6 +3229,7 @@ loadTasteLocal();
 loadSpottedLocal();
 loadFold();
 renderStamp();
+loadWeather();
 renderControls();
 renderAll();
 renderTasteNote();
