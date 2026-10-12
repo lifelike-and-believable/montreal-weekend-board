@@ -154,6 +154,22 @@ urls). Errors are `{code,error}` with 400/401/405.
   `{op:"alias", alias, place}`; `plan`, `sources` and `GET ?place=` then
   follow it to the one list. Add to the table by hand when a place earns it;
   its slug is stored with it, so editing the table never moves a list.
+- The ledger: the same `sources/<slug>` document also holds what the owner
+  has learned of a place, so a return trip starts from it rather than from a
+  search of the region. `visits` records each trip once per weekend
+  (`POST /api/trip {op:"visit", place, weekendId, from?, to?}`, which also
+  folds the owner's adds and stars for that weekend, read from
+  `taste/profile`, into `personal`: title, category, venue, add or star;
+  hides are never recorded). `guide` holds short travel notes in four
+  sections, `areas`, `transit`, `stays` and `tips`
+  (`{op:"guide", place, areas?, transit?, stays?, tips?, remove?}`): a note
+  with the same name replaces the old one, a section keeps its newest few
+  (12, 8, 8, 12), `remove` takes a note out. `plan` returns `ledger`
+  (`firstVisit`, `visits`, `firstVisitedAt`, `lastVisitedAt`, `guide`,
+  `personal` from earlier trips) for a place, null at home, and
+  `GET ?place=<slug>` returns the lot. A first visit is one with no trip on
+  an earlier weekend; the routine does a seeding pass on it (sources and a
+  guide) and leans on the ledger on a return.
 - Sources: per place at `sources/<slug>`; https only, urls normalised
   (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40 per
   place. Rank is `uses - 2*misses`; a source with 3+ misses and more misses
