@@ -2,7 +2,7 @@
 
 These are the instructions for the claude.ai routine that refreshes the board each day. This file is the source: when the instructions change, edit them here and paste the new text into the routine at claude.ai/code/routines, so a change is reviewed with the code it depends on. The routine's stored copy is what runs, so the two can drift until someone pastes.
 
-The routine reads the app's `/api/data`, `/api/db` and `/api/refresh` endpoints (`api/data.js`, `api/db.js`, `api/refresh.js`) and holds the Google Calendar connector. The separate "Weekend Board: refresh calendar" routine (see "Refreshing the calendar by hand" in the README) is not covered here.
+The routine reads the app's `/api/data`, `/api/db` and `/api/refresh` endpoints (`api/data.js`, `api/db.js`, `api/refresh.js`) and holds the Google Calendar connector. The separate "Weekend Board: refresh calendar" routine, started by the board's "check again", is in [routine-calendar-prompt.md](routine-calendar-prompt.md).
 
 The app token in the stored copy is the value of `REFRESH_SECRET`. It is deliberately not written in this file; the line that carries it below is a placeholder. Never commit the real value.
 
