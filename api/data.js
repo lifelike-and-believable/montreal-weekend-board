@@ -2,6 +2,7 @@ import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc } from "../lib/store.js";
 import { canRefresh } from "../lib/busy.js";
 import { getSources, rankSources } from "../lib/sources.js";
+import { boardGuide } from "../lib/ledger.js";
 
 /* Serves /board-data.js — this weekend's four data blocks, written by
    the daily refresh, plus BUSY: what is on the owner's own calendar
@@ -50,14 +51,17 @@ export default async function handler(req, res) {
 
     /* Quality sources for the place being visited, for the board to show.
        Optional: a store hiccup here must not cost the page its listings. */
-    let SOURCES = [];
+    let SOURCES = [], GUIDE = null;
     const slug = doc.WEEKEND.place && doc.WEEKEND.place.slug;
     if (slug) {
       try {
-        SOURCES = rankSources(((await getSources(slug)) || {}).sources || [])
+        const ledger = (await getSources(slug)) || {};
+        SOURCES = rankSources(ledger.sources || [])
           .filter((s) => s.status !== "dead").slice(0, 8)
           .map((s) => ({ name: s.name, url: s.url, kind: s.kind }));
-      } catch (e) { console.error("[data] sources", e); SOURCES = []; }
+        /* the ledger's travel notes and the owner's earlier picks there */
+        GUIDE = boardGuide(ledger, doc.WEEKEND.id);
+      } catch (e) { console.error("[data] sources", e); SOURCES = []; GUIDE = null; }
     }
 
     const payload = {
@@ -68,6 +72,7 @@ export default async function handler(req, res) {
       BUSY: doc.BUSY || [],
       AWAY: doc.AWAY || [],
       SOURCES,
+      GUIDE,
       /* when the calendar was last read, and whether the board may ask
          for a fresh read (api/calendar.js) */
       CAL: { busyAt: doc.busyAt || null, canRefresh: canRefresh() },

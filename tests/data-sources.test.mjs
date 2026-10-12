@@ -49,3 +49,18 @@ test("a failing source read leaves the page its listings", async () => {
   assert.deepEqual(data.SOURCES, []);
   assert.equal(data.WEEKEND.id, "2026-09-12");
 });
+
+test("away, /board-data.js carries the guide to the place, or null when there is none", async () => {
+  S.board = { WEEKEND: { id: "2026-10-17", days: [], place: { name: "New York", slug: "new-york-ny" } } };
+  S.sources = {
+    visits: [{ weekendId: "2026-09-12", from: "2026-09-12", to: "2026-09-13" }],
+    guide: { areas: [{ name: "Chelsea", note: "galleries", at: "2026-09-12T00:00:00Z" }] }
+  };
+  const g = (await load()).GUIDE;
+  assert.equal(g.visits, 1);
+  assert.deepEqual(g.guide.areas, [{ name: "Chelsea", note: "galleries" }]);
+  S.sources = { sources: [] };
+  assert.equal((await load()).GUIDE, null, "an empty ledger shows nothing");
+  S.board = { WEEKEND: { id: "2026-10-17", days: [] } };
+  assert.equal((await load()).GUIDE, null, "at home");
+});
