@@ -236,6 +236,11 @@ The refresh routine reads the profile from this app's store
 token), not from the retired artifact's database. `via` tells a star from
 an add if it wants to weigh them differently.
 
+The daily refresh routine's instructions are kept in
+[docs/routine-prompt.md](docs/routine-prompt.md), so a change to them is
+reviewed with the code. The routine runs the copy stored at
+claude.ai/code/routines, so paste the file there after editing it.
+
 ### Your own calendar
 
 Picks can collide with things the board has never heard of: a trip, a
