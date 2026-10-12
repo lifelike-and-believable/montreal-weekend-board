@@ -63,7 +63,99 @@ belongs, not because it has to:
     lib/location.js            reads the free-text `hood` into a
                                structured `loc`, additively
     lib/metro.js               station -> line, verified, ASCII-keyed
+    lib/plan.js                which days to plan (weekend + days off) and
+                               where the owner is; pure, no I/O
+    lib/sources.js             per-place list of good listing sources
+    api/trip.js                the routine's endpoint: plan the week,
+                               keep a place's sources
     tests/                     node --test; `npm test` runs them all
+
+## Day-off days and travel mode
+
+A Google Calendar day off in the coming week is planned like a weekend day.
+And when the calendar shows the days are spent somewhere else, the listings
+are for there, with a running list of good sources for that place.
+
+**The routine that reads Google Calendar and writes the listings lives
+outside this repo and must be updated by the owner.** This repo only stores
+and serves the data and holds the rules; nothing changes until the routine
+follows the checklist below.
+
+### Data contract
+
+    WEEKEND = { id, label, updated, days:[{key,date,name,num,kind}], place? }
+
+- `id` is the Saturday's ISO date. `days` are sorted by date, unique by
+  `key` and `date`. `key` is `sun|mon|tue|wed|thu|fri|sat`; `name` is
+  "Friday", `num` is "Fri 11 Sep"; `kind` is `weekend` (Sat/Sun) or `dayoff`
+  (Mon-Fri). `/api/refresh` fills in whatever is missing and sorts them.
+- `place` is only present in travel mode:
+  `{ name, region?, country?, slug, lat?, lon?, tz? }`. Absent means home
+  (Montreal). `/board-data.js` also carries `SOURCES`: up to 8
+  `[{name,url,kind}]` for `WEEKEND.place.slug` (empty at home, and empty if
+  the sources cannot be read).
+- In travel mode `/api/refresh` stores `AWAY` empty (the listings are for
+  where the owner is, so "away from Montreal" must not dim them) and keeps
+  `BUSY`.
+
+### Endpoints (`api/trip.js`, owner or refresh-job auth)
+
+    GET  /api/trip                    places with a list: [{slug,name,count,updatedAt}]
+    GET  /api/trip?place=<slug>       { place, updatedAt, sources } best first, dead flagged
+    POST /api/trip {op:"plan", events, away, today?}
+                                      the plan (days, label, dayOffs, place,
+                                      placeSource, weekend) plus `sources`
+                                      for the place; `today` is YYYY-MM-DD,
+                                      default the current Montreal date
+    POST /api/trip {op:"sources", place:{name,region,country},
+                    sources:[{url,name,kind,covers,note}], used:[url], dead:[url]}
+                                      refresh job only; merges and stores,
+                                      returns {slug,count,added,used,dead}
+
+Bodies are capped (100 events, 50 away spans, 50 sources, 100 used/dead
+urls). Errors are `{code,error}` with 400/401/405.
+
+### Detection conventions (`lib/plan.js`)
+
+- The weekend is the next Saturday on or after today; on a Sunday it is
+  yesterday's Saturday.
+- A day off is a Mon-Fri date in [today, today+6] covered by an event that is
+  day-shaped (all-day, `eventType: "outOfOffice"`, `dayOff: true`, or a
+  single-day timed event of 6 hours or more) and says so: its title matches
+  `DAY_OFF` (day(s) off, off work, pto, time off, vacation, holiday, ooo, out
+  of office, personal day, congé, bank holiday, long weekend), or it is
+  out-of-office / flagged `dayOff`. A one-hour "Holiday party" is not a day off.
+  Edit the keywords in the one exported `DAY_OFF` constant.
+- Place evidence, in order of trust: AWAY items (`where` / `place`, a single
+  word is fine); an event `location` (street addresses and postal codes are
+  dropped, then country, then region; a lone segment such as "Fenway Park"
+  could be a venue and is ignored); and titles shaped like
+  (trip|flight|train|drive|road trip|visit|weekend|stay|vacation|holiday|getaway|hotel|airbnb|travel)
+  + (to|in|for) + a Capitalised Name. "Boston trip" is deliberately not read.
+  Three-letter all-caps names (airport codes) are rejected. Anything
+  mentioning Montréal/Montreal is home and ignored. The place covering the
+  most planned days wins; ties go to the earliest.
+- To override detection, send the place yourself in `AWAY[].where` (trusted),
+  or set `WEEKEND.place` directly on `/api/refresh`.
+- Sources: per place at `sources/<slug>`; https only, urls normalised
+  (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40 per
+  place. Rank is `uses - 2*misses`; a source with 3+ misses and more misses
+  than uses sinks and is flagged `status:"dead"`. Over the cap the lowest
+  score is dropped, never a used source while an unused one exists.
+
+### What the external routine must now do
+
+1. Read the week's Google Calendar events and `POST /api/trip {op:"plan",
+   events, away}` (events as `{title,start,end,location,eventType,dayOff}`;
+   `away` as `{start,end,where}` for flights, hotels and trips).
+2. Generate listings for every day in the returned `days` (day-off days get
+   the same treatment as weekend days) and, if `place` is set, for that place
+   rather than Montreal. In travel mode search the returned `sources` first,
+   then discover and vet new ones.
+3. `POST /api/trip {op:"sources", place, sources, used, dead}` with the new
+   good sources and the urls that worked (`used`) or failed (`dead`).
+4. `POST /api/refresh` as before, with `WEEKEND` set to the plan's
+   `weekend` plus `updated` (ISO timestamp), and the usual blocks and `BUSY`.
 
 ## Deploying
 

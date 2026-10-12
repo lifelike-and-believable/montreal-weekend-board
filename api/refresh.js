@@ -3,6 +3,7 @@ import { getDoc, setDoc } from "../lib/store.js";
 import { pruneBoard } from "../lib/prune.js";
 import { locateAll, coverage } from "../lib/location.js";
 import { busyForWeekend, awayForWeekend } from "../lib/busy.js";
+import { normalizeWeekend } from "../lib/plan.js";
 
 /* The daily refresh POSTs the four data blocks here instead of
    republishing the artifact's HTML. That is what retires the
@@ -40,11 +41,16 @@ export default async function handler(req, res) {
   }
 
   const b = req.body || {};
-  const { WEEKEND, STANDING, EVENTS, AFIELD } = b;
+  const { STANDING, EVENTS, AFIELD } = b;
 
-  if (!WEEKEND || typeof WEEKEND !== "object" || !WEEKEND.id || !Array.isArray(WEEKEND.days)) {
+  if (!b.WEEKEND || typeof b.WEEKEND !== "object" || !b.WEEKEND.id || !Array.isArray(b.WEEKEND.days)) {
     return res.status(400).json({ code: "bad_weekend", error: "WEEKEND needs id and days[]" });
   }
+  /* Days sorted and unique with name/num/kind filled in (a day off is a
+     day here too), and the place, if any, cleaned. */
+  const WEEKEND = normalizeWeekend(b.WEEKEND);
+  if (!WEEKEND) return res.status(400).json({ code: "bad_weekend", error: "WEEKEND.days has no valid date" });
+  if (!WEEKEND.updated) WEEKEND.updated = new Date().toISOString();
   for (const [name, v] of [["STANDING", STANDING], ["EVENTS", EVENTS], ["AFIELD", AFIELD]]) {
     if (!Array.isArray(v)) return res.status(400).json({ code: "bad_block", error: `${name} must be an array` });
   }
@@ -98,6 +104,12 @@ export default async function handler(req, res) {
       } catch (e) { busy = []; away = []; }
     }
 
+    /* In travel mode the listings are for where the owner is, so Montreal
+       being out of reach ("away") is not a reason to dim them: AWAY is
+       the board's "nothing in Montreal is on the cards" signal and would
+       mark every one of these listings as unreachable. BUSY stays. */
+    if (WEEKEND.place) away = [];
+
     await setDoc("board/current", {
       WEEKEND, STANDING: standing, EVENTS: events, AFIELD: afield, BUSY: busy, AWAY: away, busyAt,
       updatedAt: new Date().toISOString()
@@ -113,7 +125,9 @@ export default async function handler(req, res) {
     if (b.prune !== false) {
       try {
         pruned = await pruneBoard({
-          weekendStart: WEEKEND.days[0] && WEEKEND.days[0].date,
+          /* the Saturday, not days[0]: a day off earlier in the week
+             must not move the cutoff */
+          weekendStart: WEEKEND.id,
           dryRun: !!b.pruneDryRun
         });
         if (pruned.errors.length) console.warn("[refresh] prune", pruned.errors);
@@ -126,6 +140,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       weekendId: WEEKEND.id,
+      place: WEEKEND.place || null,
       counts: { standing: STANDING.length, events: EVENTS.length, afield: AFIELD.length, busy: busy.length, away: away.length },
       located,
       pruned
