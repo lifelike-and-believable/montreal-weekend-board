@@ -638,6 +638,13 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
   font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
   border:1px solid var(--brick);color:var(--brick);padding:2px 5px;border-radius:2px;align-self:center;
 }
+/* a Monday-to-Friday day the owner has off: the words carry it, the border
+   only echoes it, so it reads the same in greyscale */
+.dayoff-flag{
+  font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 82,"wght" 700;
+  font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+  border:1px solid var(--accent);color:var(--accent);padding:2px 5px;border-radius:2px;align-self:center;
+}
 .ev-clash{margin:0;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;color:var(--brick)}
 /* rides with the button pinned to the card's foot, as on the other cards */
 .hl-clash{margin:auto 0 -2px;font-family:"IBM Plex Mono",monospace;font-size:11.5px;line-height:1.45;color:var(--brick-on-panel)}
@@ -669,6 +676,9 @@ footer.foot{
 footer.foot a{color:var(--ink-2);text-decoration:none;border-bottom:1px solid var(--line)}
 footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
 .foot-note{flex-basis:100%;max-width:70ch;line-height:1.5}
+.foot-sources{display:contents}
+/* the away footer's own words use the darker ink; the home footer is left as it was */
+.foot-sources.is-away > span,.foot-note.is-away{color:var(--ink-2)}
 #taste-note{color:var(--ink-2)}
 #taste-note .lnk{
   background:none;border:none;padding:0;cursor:pointer;color:var(--ink-3);
@@ -692,7 +702,7 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
   <div class="stale" id="stale" role="status" hidden></div>
   <header class="top">
     <div class="brand">
-      <p class="kicker">Anglophone-friendly · Montréal</p>
+      <p class="kicker" id="kicker">Anglophone-friendly · Montréal</p>
       <h1>The Weekend <span class="em">Board</span></h1>
       <p class="dateline" id="dateline">Everything worth leaving the house for this weekend, in town and out of it. Tick what you want, hide what you don&rsquo;t, and the board builds your itinerary at the bottom of the page.</p>
     </div>
@@ -740,6 +750,7 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
   </section>
 
   <footer class="foot">
+    <span class="foot-sources" id="foot-sources">
     <span>Sources:</span>
     <a href="https://cultmtl.com/" target="_blank" rel="noopener">Cult MTL</a>
     <a href="https://www.lavitrine.com/en" target="_blank" rel="noopener">La Vitrine</a>
@@ -750,8 +761,9 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
     <a href="https://www.timeout.com/montreal" target="_blank" rel="noopener">Time Out</a>
     <a href="https://www.sepaq.com/" target="_blank" rel="noopener">Sépaq</a>
     <a href="https://www.quebecvacances.com/en" target="_blank" rel="noopener">Québec Getaways</a>
+    </span>
     <p class="foot-note" id="taste-note"></p>
-    <p class="foot-note">Film version codes follow Montreal house style — <b>VOA</b> original English, <b>VOF/VF</b> French, <b>VOSTA</b> original with English subtitles, <b>VOSTF</b> original with French subtitles. Always confirm showtimes and availability on the venue's own page before you travel; sold-out and last-minute changes happen.</p>
+    <p class="foot-note" id="foot-film">Film version codes follow Montreal house style — <b>VOA</b> original English, <b>VOF/VF</b> French, <b>VOSTA</b> original with English subtitles, <b>VOSTF</b> original with French subtitles. Always confirm showtimes and availability on the venue's own page before you travel; sold-out and last-minute changes happen.</p>
   </footer>
 </div>
 
@@ -1292,8 +1304,11 @@ var BUSY = [];
    nothing in Montreal is on the cards then. */
 var AWAY = [];
 var CAL = { busyAt: null, canRefresh: false };   /* when it was read; can the board ask again */
+/* Good sources for the place, in travel mode only: [{name,url,kind}]. */
+var SOURCES = [];
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
+  if (Array.isArray(BD.SOURCES))     SOURCES  = BD.SOURCES;
   if (Array.isArray(BD.BUSY))        BUSY     = BD.BUSY;
   if (Array.isArray(BD.AWAY))        AWAY     = BD.AWAY;
   if (BD.CAL && typeof BD.CAL === "object") CAL = BD.CAL;
@@ -1631,8 +1646,95 @@ function dayKeyForDate(iso){
   return null;
 }
 function weekendSpan(){
-  return { from: WEEKEND.days[0].date, to: WEEKEND.days[WEEKEND.days.length-1].date };
+  /* days need not be contiguous (Wed + Sat + Sun), so first..last is only
+     the outer edge; `dates` is the days the board actually has */
+  return { from: WEEKEND.days[0].date, to: WEEKEND.days[WEEKEND.days.length-1].date,
+           dates: WEEKEND.days.map(function(d){ return d.date; }) };
 }
+/* ---------- travel mode ----------
+   WEEKEND.place is only there when the board is for somewhere other than
+   home. Absent, every one of these says nothing and the board is Montreal's. */
+function placeOf(){
+  var p = WEEKEND && WEEKEND.place;
+  return p && typeof p === "object" && typeof p.name === "string" && p.name.trim() ? p : null;
+}
+/* "Boston, MA", or "" at home. */
+function placeLabel(){
+  var p = placeOf();
+  if (!p) return "";
+  var name = p.name.trim();
+  var more = typeof p.region === "string" && p.region.trim() ? p.region.trim()
+    : typeof p.country === "string" && p.country.trim() ? p.country.trim() : "";
+  return more && more.toLowerCase() !== name.toLowerCase() ? name + ", " + more : name;
+}
+function kickerText(){
+  var l = placeLabel();
+  return l ? "Travel mode · " + l : "Anglophone-friendly · Montréal";
+}
+function titleText(){
+  var p = placeOf();
+  return p ? "Weekend Board · " + p.name.trim() : "Montreal Weekend Board";
+}
+function datelineText(){
+  var l = placeLabel();
+  return l ? "Everything worth getting out for in " + l + " on the days you’re there. Tick what you want, hide what you don’t, and the board builds your itinerary at the bottom of the page." : "";
+}
+/* The poster-reading prompt's opening, which is where the place goes. */
+function posterPromptHead(){
+  var l = placeLabel();
+  return "This is a photograph of a poster, flyer or handbill for an event in or near " + (l || "Montreal, Quebec") + ". " +
+  "Read what the poster actually says and pull out the event details.\n\n" +
+  "Rules:\n" +
+  "- Never invent a detail. If something is not printed on the poster, use null.\n" +
+  "- A date with no year means the next time that date occurs after today.\n" +
+  "- Times are 24-hour, \"HH:MM\".\n" +
+  "- A run of several days gives a startDate and a later endDate; a one-night event gives the same date for both.\n" +
+  "- Posters are often in French. Translate the title only if the poster itself gives an English title; otherwise keep it as printed.\n\n" +
+  "Reply with only a JSON object of this shape:\n" +
+  '{"title":string,"sub":string|null,"cat":"theatre"|"film"|"music"|"dance"|"museum"|"fest"|"market",' +
+  '"startDate":"YYYY-MM-DD"|null,"endDate":"YYYY-MM-DD"|null,"time":"HH:MM"|null,' +
+  '"venue":string|null,"address":string|null,"price":string|null,"free":boolean,' +
+  '"url":string|null,"language":string|null,"confidence":"high"|"medium"|"low","unreadable":[string]}';
+}
+/* The small word on a day's header when it is one the owner has off. */
+function dayOffFlagHtml(d){
+  return d && d.kind === "dayoff" ? '<span class="dayoff-flag">Day off</span>' : "";
+}
+/* http(s) only: anything else (javascript:, data:, a bare word) is no link. */
+function safeHttpUrl(u){
+  if (typeof u !== "string") return "";
+  try {
+    var p = new URL(u.trim());
+    return p.protocol === "http:" || p.protocol === "https:" ? p.href : "";
+  } catch(e) { return ""; }
+}
+/* The footer's links for the place, or a short muted line when there are none. */
+function sourcesHtml(list, label){
+  var links = (Array.isArray(list) ? list : []).slice(0, 8).map(function(s){
+    var href = s && safeHttpUrl(s.url);
+    if (!href) return "";
+    var name = s.name != null && String(s.name).trim() ? String(s.name).trim() : new URL(href).hostname;
+    return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(name) + '</a>';
+  }).filter(Boolean);
+  if (!links.length) return '<span>No listing sources picked for ' + esc(label) + ' yet.</span>';
+  return '<span>Sources for ' + esc(label) + ':</span> ' + links.join(" ");
+}
+/* Away from home: the kicker, title, dateline and footer say so. */
+function applyPlace(){
+  var l = placeLabel();
+  if (!l) return;
+  var k = document.getElementById("kicker");
+  if (k) k.textContent = kickerText();
+  document.title = titleText();
+  var dl = document.getElementById("dateline");
+  if (dl) dl.textContent = datelineText();
+  var fs = document.getElementById("foot-sources");
+  if (fs) { fs.innerHTML = sourcesHtml(SOURCES, l); fs.classList.add("is-away"); }
+  var ff = document.getElementById("foot-film");
+  if (ff) ff.classList.add("is-away");
+  if (ff) ff.textContent = "Always confirm showtimes and availability on the venue’s own page before you go; sold-out and last-minute changes happen.";
+}
+
 function prettyDate(iso){
   if (!iso) return "date unknown";
   var p = iso.split("-");
@@ -1912,6 +2014,10 @@ function splitSpotted(){
     if (!from) { out.coming.push(rec); return; }
     if (to < span.from) return;                       /* over and done */
     if (from > span.to) { out.coming.push(rec); return; }
+    /* a run that sits wholly between two board days (Tue-Wed on a Mon + Sat
+       board) is neither on the board nor "all weekend"; it is over by the
+       time the next board day comes, so it is left alone, not listed */
+    if (from !== to && span.dates && !span.dates.some(function(x){ return x >= from && x <= to; })) return;
     var twin = onlineTwin(rec, rows);
     if (twin) {                       /* the refresh has it: it says it better */
       twin.recId = rec.id;
@@ -2305,12 +2411,53 @@ function wxLine(iso){
   if (w.pop >= 20) bits.push(w.pop + "% rain");
   return '<span class="dwx">' + esc(bits.filter(Boolean).join(" · ")) + '</span>';
 }
+/* coords null = home (Montreal, Toronto's clock); else {lat, lon} and the
+   forecast keeps the place's own clock. */
+function weatherUrl(coords, first, last){
+  var where = coords ? "latitude=" + coords.lat + "&longitude=" + coords.lon : "latitude=45.5017&longitude=-73.5673";
+  return "https://api.open-meteo.com/v1/forecast?" + where +
+        "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+        "&temperature_unit=fahrenheit&timezone=" + (coords ? "auto" : "America%2FToronto") +
+        "&start_date=" + first + "&end_date=" + last;
+}
+function geocodeUrl(name){
+  return "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(name) + "&count=1";
+}
+function validCoords(lat, lon){
+  if (lat == null || lon == null || lat === "" || lon === "") return null;
+  var a = Number(lat), o = Number(lon);
+  return isFinite(a) && isFinite(o) && Math.abs(a) <= 90 && Math.abs(o) <= 180 ? { lat: a, lon: o } : null;
+}
+/* Where the place is: given with it, remembered from an earlier look-up, or
+   looked up once by name. Resolves to {lat, lon} or null; never rejects. */
+function placeCoords(){
+  var p = placeOf();
+  if (!p) return Promise.resolve(null);
+  var given = validCoords(p.lat, p.lon);
+  if (given) return Promise.resolve(given);
+  var ck = "mtl-weekend-geo-" + (p.slug || p.name.trim().toLowerCase());
+  try {
+    var kept = validCoords.apply(null, JSON.parse(window.localStorage.getItem(ck)) || []);
+    if (kept) return Promise.resolve(kept);
+  } catch(e){}
+  return fetch(geocodeUrl(p.name.trim()))
+    .then(function(r){ return r.ok ? r.json() : null; })
+    .then(function(j){
+      var hit = j && Array.isArray(j.results) && j.results[0];
+      var c = hit ? validCoords(hit.latitude, hit.longitude) : null;
+      if (c) { try { window.localStorage.setItem(ck, JSON.stringify([c.lat, c.lon])); } catch(e){} }
+      return c;
+    })
+    .catch(function(){ return null; });
+}
 function loadWeather(){
   var first = WEEKEND.days[0].date, last = WEEKEND.days[WEEKEND.days.length-1].date;
-  fetch("https://api.open-meteo.com/v1/forecast?latitude=45.5017&longitude=-73.5673" +
-        "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
-        "&temperature_unit=fahrenheit&timezone=America%2FToronto&start_date=" + first + "&end_date=" + last)
-    .then(function(r){ return r.ok ? r.json() : null; })
+  var where = placeOf() ? placeCoords() : Promise.resolve(null);
+  where.then(function(c){
+    if (placeOf() && !c) return null;
+    return fetch(weatherUrl(c, first, last));
+  })
+    .then(function(r){ return r && r.ok ? r.json() : null; })
     .then(function(j){
       var d = j && j.daily;
       if (!d || !d.time) return;
@@ -2378,6 +2525,7 @@ function renderDays(){
         'title="' + (shut ? 'Show' : 'Hide') + ' ' + esc(d.name) + '">' +
       '<span class="dnum">' + esc(d.name) + '</span>' +
       (isToday ? '<span class="today-flag">Today</span>' : '') +
+      dayOffFlagHtml(d) +
       (flag ? '<span class="busy-flag">' + esc(flag) + '</span>'
         : occasionsOn(d.key).length ? '<span class="busy-flag occasion">' + esc(occasionsOn(d.key)[0].title) + '</span>' : '') +
       wxLine(d.date) +
@@ -2749,20 +2897,8 @@ var capFile = null, capEditing = null, capAbort = null;
 var samplePromise = null;   /* resolves to the sample fn, or null */
 var capParsed = false;      /* did the page manage to read this photo itself? */
 
-var POSTER_PROMPT_HEAD =
-  "This is a photograph of a poster, flyer or handbill for an event in or near Montreal, Quebec. " +
-  "Read what the poster actually says and pull out the event details.\n\n" +
-  "Rules:\n" +
-  "- Never invent a detail. If something is not printed on the poster, use null.\n" +
-  "- A date with no year means the next time that date occurs after today.\n" +
-  "- Times are 24-hour, \"HH:MM\".\n" +
-  "- A run of several days gives a startDate and a later endDate; a one-night event gives the same date for both.\n" +
-  "- Posters are often in French. Translate the title only if the poster itself gives an English title; otherwise keep it as printed.\n\n" +
-  "Reply with only a JSON object of this shape:\n" +
-  '{"title":string,"sub":string|null,"cat":"theatre"|"film"|"music"|"dance"|"museum"|"fest"|"market",' +
-  '"startDate":"YYYY-MM-DD"|null,"endDate":"YYYY-MM-DD"|null,"time":"HH:MM"|null,' +
-  '"venue":string|null,"address":string|null,"price":string|null,"free":boolean,' +
-  '"url":string|null,"language":string|null,"confidence":"high"|"medium"|"low","unreadable":[string]}';
+/* Built at load, after __BOARD_DATA__ has set WEEKEND (and so the place). */
+var POSTER_PROMPT_HEAD = posterPromptHead();
 
 function capOpen(rec){
   capEditing = rec || null;
@@ -3131,7 +3267,7 @@ function fallbackCopy(txt){
 
 function planText(){
   var p = planRows(), L = [];
-  L.push("MY MONTREAL WEEKEND — " + WEEKEND.label);
+  L.push((placeLabel() ? "MY WEEKEND IN " + placeLabel().toUpperCase() : "MY MONTREAL WEEKEND") + " — " + WEEKEND.label);
   L.push("");
   if (p.standing.length) {
     L.push("ANY TIME THIS WEEKEND · TRIPS");
@@ -3181,6 +3317,15 @@ function isEDT(dateISO){
   if (m === 3) return day >= (14 - first) % 7 + 8;
   return day < (7 - first) % 7 + 1;
 }
+/* Away, a showing's time is the place's clock, not Montreal's: the link
+   carries the wall-clock time and names the zone (ctz) instead of a UTC
+   stamp worked out with Montreal's offset. */
+function localStamp(dateISO, hhmm, addMin){
+  var p = dateISO.split("-"), t = (hhmm || "12:00").split(":");
+  var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2], +t[0], +t[1] + (addMin || 0)));
+  return d.getUTCFullYear() + pad(d.getUTCMonth()+1) + pad(d.getUTCDate()) + "T" +
+         pad(d.getUTCHours()) + pad(d.getUTCMinutes()) + "00";
+}
 function plusDays(dateISO, n){
   var p = dateISO.split("-");
   var d = new Date(Date.UTC(+p[0], +p[1]-1, +p[2] + n));
@@ -3191,10 +3336,13 @@ function gcalUrl(r){
   var title = it.title + (it.sub ? " (" + it.sub + ")" : "");
   var where = (it.venue || it.region || "") + (it.hood ? " · " + it.hood : "");
   var details = [it.note || "", it.travel || "", it.url || ""].filter(Boolean).join("\n\n");
-  var dates;
+  var dates, ctz = "";
   if (r.time && r.day && DAYMAP[r.day]) {
     var dISO = DAYMAP[r.day].date;
-    dates = utcStamp(dISO, r.time, 0) + "/" + utcStamp(dISO, r.time, it.dur || 120);
+    var tz = placeOf() && typeof placeOf().tz === "string" ? placeOf().tz : "";
+    dates = tz ? localStamp(dISO, r.time, 0) + "/" + localStamp(dISO, r.time, it.dur || 120)
+               : utcStamp(dISO, r.time, 0) + "/" + utcStamp(dISO, r.time, it.dur || 120);
+    ctz = tz;
   } else {
     /* no published time: an all-day block across the weekend, end exclusive */
     var from = WEEKEND.days[0].date;
@@ -3203,7 +3351,7 @@ function gcalUrl(r){
   }
   return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
     "&text=" + encodeURIComponent(title) +
-    "&dates=" + dates +
+    "&dates=" + dates + (ctz ? "&ctz=" + encodeURIComponent(ctz) : "") +
     "&location=" + encodeURIComponent(where) +
     "&details=" + encodeURIComponent(details);
 }
@@ -3228,6 +3376,7 @@ loadLocal();
 loadTasteLocal();
 loadSpottedLocal();
 loadFold();
+applyPlace();
 renderStamp();
 loadWeather();
 renderControls();

@@ -1,6 +1,7 @@
 import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { getDoc } from "../lib/store.js";
 import { canRefresh } from "../lib/busy.js";
+import { getSources, rankSources } from "../lib/sources.js";
 
 /* Serves /board-data.js — this weekend's four data blocks, written by
    the daily refresh, plus BUSY: what is on the owner's own calendar
@@ -47,6 +48,18 @@ export default async function handler(req, res) {
     const doc = await getDoc("board/current");
     if (!doc || !doc.WEEKEND) return send(res, { status: "empty" });
 
+    /* Quality sources for the place being visited, for the board to show.
+       Optional: a store hiccup here must not cost the page its listings. */
+    let SOURCES = [];
+    const slug = doc.WEEKEND.place && doc.WEEKEND.place.slug;
+    if (slug) {
+      try {
+        SOURCES = rankSources(((await getSources(slug)) || {}).sources || [])
+          .filter((s) => s.status !== "dead").slice(0, 8)
+          .map((s) => ({ name: s.name, url: s.url, kind: s.kind }));
+      } catch (e) { console.error("[data] sources", e); SOURCES = []; }
+    }
+
     const payload = {
       WEEKEND: doc.WEEKEND,
       STANDING: doc.STANDING || [],
@@ -54,6 +67,7 @@ export default async function handler(req, res) {
       AFIELD: doc.AFIELD || [],
       BUSY: doc.BUSY || [],
       AWAY: doc.AWAY || [],
+      SOURCES,
       /* when the calendar was last read, and whether the board may ask
          for a fresh read (api/calendar.js) */
       CAL: { busyAt: doc.busyAt || null, canRefresh: canRefresh() },

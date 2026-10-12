@@ -175,3 +175,60 @@ test("an empty BUSY is an answer, and clears the weekend", async () => {
   assert.deepEqual(S.stored.data.BUSY, []);
   S.prev = null;
 });
+
+/* Days off and travel: the WEEKEND block is normalised, and a place
+   means the listings are for there. */
+const TRIP_WEEKEND = {
+  id: "2026-09-12",
+  days: [{ date: "2026-09-13" }, { date: "2026-09-12" }, { date: "2026-09-10" }],
+  place: { name: "Boston", region: "MA", country: "USA" }
+};
+const tripPayload = (extra) => ({ ...payload(), WEEKEND: TRIP_WEEKEND, ...extra });
+
+test("days are stored sorted with name, num and kind", async () => {
+  S.prev = null;
+  const res = await post(tripPayload());
+  assert.equal(res.code, 200);
+  assert.deepEqual(S.stored.data.WEEKEND.days.map((d) => [d.key, d.kind, d.num]), [
+    ["thu", "dayoff", "Thu 10 Sep"], ["sat", "weekend", "Sat 12 Sep"], ["sun", "weekend", "Sun 13 Sep"]]);
+  assert.ok(S.stored.data.WEEKEND.updated, "updated is filled in when the routine omits it");
+});
+
+test("a place is cleaned, stored, and reported", async () => {
+  const res = await post(tripPayload());
+  assert.equal(S.stored.data.WEEKEND.place.slug, "boston-ma-usa");
+  assert.equal(res.body.place.name, "Boston");
+});
+
+test("no place stays exactly as before", async () => {
+  const res = await post(payload());
+  assert.equal("place" in S.stored.data.WEEKEND, false);
+  assert.equal(res.body.place, null);
+  assert.equal(S.stored.data.WEEKEND.updated !== undefined, true);
+});
+
+test("a given updated is kept", async () => {
+  await post({ ...payload(), WEEKEND: { ...WEEKEND, updated: "2026-09-10T08:00:00Z" } });
+  assert.equal(S.stored.data.WEEKEND.updated, "2026-09-10T08:00:00Z");
+});
+
+test("travel mode stores AWAY empty but keeps BUSY", async () => {
+  S.prev = null;
+  const res = await post(tripPayload({ BUSY: [
+    { id: "t", title: "Flight", start: "2026-09-12", end: "2026-09-14" }],
+    AWAY: [{ start: "2026-09-12", end: "2026-09-14", where: "Boston" }] }));
+  assert.equal(res.code, 200);
+  assert.equal(S.stored.data.BUSY.length, 2);
+  assert.deepEqual(S.stored.data.AWAY, []);
+  assert.equal(res.body.counts.away, 0);
+  /* at home, the same AWAY is stored */
+  const home = await post({ ...payload(), WEEKEND: BUSY_WEEKEND, BUSY: [], AWAY: [{ start: "2026-09-26", end: "2026-09-28", where: "Revelstoke" }] });
+  assert.equal(home.body.counts.away, 2);
+});
+
+test("a WEEKEND with no valid day is refused", async () => {
+  const res = await post({ ...payload(), WEEKEND: { id: "2026-09-12", days: [{ date: "nope" }] } });
+  assert.equal(res.code, 400);
+  assert.equal(res.body.code, "bad_weekend");
+  assert.equal(S.stored, null);
+});
