@@ -6,7 +6,7 @@ This file is the source: when the instructions change, edit them here and paste 
 
 The app token in the stored copy is the value of `CALENDAR_SECRET`, which works for `/api/calendar` only. (Until `CALENDAR_SECRET` is set in Vercel, `REFRESH_SECRET` is accepted there as well.) It is deliberately not written in this file; the line that carries it below is a placeholder. Never commit the real value.
 
-The daily listings routine is in [routine-prompt.md](routine-prompt.md).
+The daily listings task (a scheduled task, not a routine) is in [routine-prompt.md](routine-prompt.md).
 
 Paste everything under the line into the routine.
 
