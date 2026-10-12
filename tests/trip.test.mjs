@@ -47,7 +47,7 @@ test("plan returns the days, the place and that place's sources", async () => {
     { title: "PTO", start: "2026-09-10", end: "2026-09-11" }] } });
   assert.equal(r.code, 200);
   assert.deepEqual(r.body.days.map((d) => d.key), ["thu", "fri", "sat", "sun"]);
-  assert.equal(r.body.place.slug, "boston-ma-usa");
+  assert.equal(r.body.place.slug, "boston-ma");
   assert.equal(r.body.placeSource, "away");
   assert.deepEqual(r.body.sources.map((s) => s.url).sort(), ["https://a.com", "https://b.com"]);
 });
@@ -94,10 +94,10 @@ test("sources is for the job only, and validates", async () => {
 test("sources merges, counts, and is read back ranked", async () => {
   DOCS.clear();
   const r1 = await call("POST", { body: { op: "sources", place: BOSTON, sources: [{ url: "https://a.com" }, { url: "https://b.com" }] } });
-  assert.deepEqual(r1.body, { ok: true, slug: "boston-ma-usa", count: 2, added: 2, used: 0, dead: 0 });
+  assert.deepEqual(r1.body, { ok: true, slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0 });
   const r2 = await call("POST", { body: { op: "sources", place: BOSTON, sources: [], used: ["https://b.com"], dead: ["https://a.com"] } });
   assert.equal(r2.body.used, 1);
-  const get = await call("GET", { auth: "owner", query: { place: "boston-ma-usa" } });
+  const get = await call("GET", { auth: "owner", query: { place: "boston-ma" } });
   assert.equal(get.code, 200);
   assert.equal(get.body.place.name, "Boston");
   assert.deepEqual(get.body.sources.map((s) => s.url), ["https://b.com", "https://a.com"]);
@@ -109,5 +109,50 @@ test("GET with no place lists the places that have a list", async () => {
   const r = await call("GET");
   assert.equal(r.code, 200);
   assert.equal(r.body.places.length, 1);
-  assert.deepEqual([r.body.places[0].slug, r.body.places[0].name, r.body.places[0].count], ["boston-ma-usa", "Boston", 2]);
+  assert.deepEqual([r.body.places[0].slug, r.body.places[0].name, r.body.places[0].count], ["boston-ma", "Boston", 2]);
+});
+
+test("alias: a job files another name under a place's list; the owner may not", async () => {
+  DOCS.clear();
+  const OWN = { name: "Burlington", region: "VT", country: "USA" };
+  await call("POST", { body: { op: "sources", place: OWN, sources: [{ url: "https://a.com" }] } });
+  const body = { op: "alias", alias: "The Queen City", place: OWN };
+  assert.equal((await call("POST", { auth: "owner", body })).code, 401);
+  const r = await call("POST", { body });
+  assert.deepEqual(r.body, { ok: true, alias: "the queen city", slug: "burlington-vt-usa" });
+  assert.equal((await call("POST", { body: { ...body, alias: "x" } })).body.code, "bad_alias");
+  assert.equal((await call("POST", { body: { ...body, alias: "Montreal" } })).body.code, "bad_alias");
+  assert.equal((await call("POST", { body: { ...body, place: { name: "Montreal" } } })).body.code, "bad_alias");
+});
+
+test("alias: a plan, a source report and a read for the other name all land on the one list", async () => {
+  const away2 = [{ start: "2026-09-12", end: "2026-09-14", where: "The Queen City" }];
+  const plan = await call("POST", { body: { op: "plan", today: "2026-09-09", away: away2, events: [] } });
+  assert.equal(plan.body.place.slug, "burlington-vt-usa", "the plan is moved to the list the alias names");
+  assert.equal(plan.body.place.name, "Burlington");
+  assert.equal(plan.body.weekend.place.slug, "burlington-vt-usa");
+  assert.deepEqual(plan.body.sources.map((s) => s.url), ["https://a.com"]);
+
+  const rep = await call("POST", { body: { op: "sources", place: { name: "The Queen City" }, sources: [{ url: "https://b.com" }] } });
+  assert.deepEqual([rep.body.slug, rep.body.count], ["burlington-vt-usa", 2]);
+  const get = await call("GET", { auth: "owner", query: { place: "the queen city" } });
+  assert.equal(get.code, 200);
+});
+
+test("a known place needs no alias: NYC and Brooklyn share a list", async () => {
+  DOCS.clear();
+  const first = await call("POST", { body: { op: "sources", place: { name: "NYC" }, sources: [{ url: "https://nyc.example.com" }] } });
+  assert.equal(first.body.slug, "new-york-ny");
+  const plan = await call("POST", { body: { op: "plan", today: "2026-09-09", events: [],
+    away: [{ start: "2026-09-12", end: "2026-09-14", where: "Brooklyn, NY" }] } });
+  assert.equal(plan.body.place.slug, "new-york-ny");
+  assert.deepEqual(plan.body.sources.map((s) => s.url), ["https://nyc.example.com"]);
+});
+
+test("an alias store that cannot be read does not cost the plan", async () => {
+  S.getThrows = true;
+  const r = await call("POST", { body: { op: "plan", today: "2026-09-09", away, events: [] } });
+  S.getThrows = false;
+  assert.equal(r.code, 200);
+  assert.equal(r.body.place.name, "Boston");
 });

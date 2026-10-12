@@ -90,14 +90,14 @@ test("a used source is never evicted while an unused one exists", () => {
 
 test("getSources and saveSources round-trip through the store", async () => {
   DOCS.clear();
-  assert.equal(await getSources("boston-ma-usa"), null);
+  assert.equal(await getSources("boston-ma"), null);
   assert.equal(await getSources("../etc"), null);
   const r = await saveSources({ name: "Boston", region: "MA", country: "USA" }, { sources: [src("a.com"), src("b.com")], now: NOW });
-  assert.deepEqual(r, { slug: "boston-ma-usa", count: 2, added: 2, used: 0, dead: 0 });
+  assert.deepEqual(r, { slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0 });
   const r2 = await saveSources({ name: "Boston", region: "MA", country: "USA" },
     { sources: [src("c.com")], used: ["https://a.com"], dead: ["https://b.com", "https://zzz.com"], now: "2026-09-12T00:00:00Z" });
-  assert.deepEqual(r2, { slug: "boston-ma-usa", count: 3, added: 1, used: 1, dead: 1 });
-  const doc = DOCS.get("sources/boston-ma-usa");
+  assert.deepEqual(r2, { slug: "boston-ma", count: 3, added: 1, used: 1, dead: 1 });
+  const doc = DOCS.get("sources/boston-ma");
   assert.deepEqual(doc.place, { name: "Boston", region: "MA", country: "USA" });
   assert.equal(doc.createdAt, NOW);
   assert.equal(doc.updatedAt, "2026-09-12T00:00:00Z");

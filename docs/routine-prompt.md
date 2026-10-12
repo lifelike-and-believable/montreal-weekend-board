@@ -173,7 +173,7 @@ In travel mode, once the refresh has succeeded, report what you learned about th
     Content-Type: application/json
     {"op":"sources","place":{"name":"Boston","region":"Massachusetts","country":"United States"},"sources":[{"url":"https://...","name":"...","kind":"...","covers":"...","note":"..."}],"used":["https://..."],"dead":["https://..."]}
 
-`place` is the plan's `place`. `sources` are NEW good sources you found (https, at most 50); `used` are urls from the plan's list that gave you listings; `dead` are urls that failed or were empty. A failure here does not undo the refresh; say so in the report. At home, send nothing.
+`place` is the plan's `place`. If you found out that the owner's place is known by another name (a neighbourhood, a nickname, a different spelling the plan did not fold together), also file it so the next trip finds this list: `POST /api/trip {"op":"alias","alias":"<the other name>","place":<the plan's place>}`. `sources` are NEW good sources you found (https, at most 50); `used` are urls from the plan's list that gave you listings; `dead` are urls that failed or were empty. A failure here does not undo the refresh; say so in the report. At home, send nothing.
 
 If it returns 401, the token has not been accepted — say so clearly in your report. Do not attempt to discover or guess another token.
 

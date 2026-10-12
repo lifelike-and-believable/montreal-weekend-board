@@ -127,9 +127,11 @@ test("cleanPlace sanitises and refuses home", () => {
   assert.equal(cleanPlace({ name: "Montréal" }), null);
   assert.equal(cleanPlace({ name: "Boston", isHome: true }), null);
   const p = cleanPlace({ name: "Boston", region: "MA", lat: 42.36, lon: -71.06, tz: "America/New_York" });
-  assert.deepEqual(p, { name: "Boston", region: "MA", slug: "boston-ma", lat: 42.36, lon: -71.06, tz: "America/New_York" });
+  assert.deepEqual(p, { name: "Boston", region: "MA", country: "USA", slug: "boston-ma", lat: 42.36, lon: -71.06, tz: "America/New_York" });
   const odd = cleanPlace({ name: "Boston", lat: 400, lon: "x", tz: "Not/AZone", slug: "Bad Slug" });
-  assert.deepEqual(odd, { name: "Boston", slug: "boston" });
+  assert.deepEqual(odd, { name: "Boston", region: "MA", country: "USA", slug: "boston-ma" }, "a bare Boston is the well-known one");
+  assert.deepEqual(cleanPlace({ name: "Boston", region: "Lincolnshire", slug: "Bad Slug" }),
+    { name: "Boston", region: "Lincolnshire", slug: "boston-lincolnshire" }, "a region that disagrees is another place");
   assert.equal(cleanPlace({ name: "n".repeat(300) }).name.length, 80);
 });
 
@@ -153,7 +155,7 @@ test("a flight-to title names the place; an 'X trip' title does not", () => {
 test("an event location names the place, once it reads as one", () => {
   const ev = (location) => ({ title: "Show", start: "2026-09-12T20:00:00-04:00", end: "2026-09-12T22:00:00-04:00", location });
   const p = plan([ev("Hotel Commonwealth, 500 Commonwealth Ave, Boston, MA 02215, USA")]);
-  assert.deepEqual([p.place.name, p.place.region, p.place.country, p.place.slug], ["Boston", "MA", "USA", "boston-ma-usa"]);
+  assert.deepEqual([p.place.name, p.place.region, p.place.country, p.place.slug], ["Boston", "MA", "USA", "boston-ma"]);
   assert.equal(p.placeSource, "location");
   assert.equal(plan([ev("Fenway Park")]).place, null);
 });
