@@ -1,12 +1,12 @@
-# Daily refresh routine: instructions
+# Daily refresh task: instructions
 
-These are the instructions for the claude.ai routine that refreshes the board each day. This file is the source: when the instructions change, edit them here and paste the new text into the routine at claude.ai/code/routines, so a change is reviewed with the code it depends on. The routine's stored copy is what runs, so the two can drift until someone pastes.
+These are the instructions for the Claude scheduled task "Daily Refresh" that refreshes the board each day. It is a scheduled task, not a routine, and it has "Requires this computer" unchecked, so it runs in the cloud and does not need the owner's machine to be on. This file is the source: when the instructions change, edit them here and paste the new text into the scheduled task's instructions (under Scheduled tasks, not at claude.ai/code/routines), so a change is reviewed with the code it depends on. The task's stored copy is what runs, so the two can drift until someone pastes.
 
-The routine reads the app's `/api/data`, `/api/db`, `/api/trip` and `/api/refresh` endpoints (`api/data.js`, `api/db.js`, `api/trip.js`, `api/refresh.js`) and holds the Google Calendar connector. The separate "Weekend Board: refresh calendar" routine, started by the board's "check again", is in [routine-calendar-prompt.md](routine-calendar-prompt.md).
+The routine reads the app's `/api/data`, `/api/db`, `/api/trip` and `/api/refresh` endpoints (`api/data.js`, `api/db.js`, `api/trip.js`, `api/refresh.js`) and holds the Google Calendar connector. The separate "Weekend Board: refresh calendar" routine (a routine, unlike this task), started by the board's "check again", is in [routine-calendar-prompt.md](routine-calendar-prompt.md).
 
-The app token in the stored copy is the value of `REFRESH_SECRET`, which this routine's calls are limited to: `/api/data`, `/api/refresh`, `/api/trip`, the taste profile, and `spotted/` documents through `/api/db` (see `lib/scope.js`). It is deliberately not written in this file; the line that carries it below is a placeholder. Never commit the real value.
+The app token in the stored copy is the value of `REFRESH_SECRET`, which this task's calls are limited to: `/api/data`, `/api/refresh`, `/api/trip`, the taste profile, and `spotted/` documents through `/api/db` (see `lib/scope.js`). It is deliberately not written in this file; the line that carries it below is a placeholder. Never commit the real value.
 
-Paste everything under the line into the routine.
+Paste everything under the line into the scheduled task.
 
 ---
 
@@ -15,7 +15,7 @@ Refresh the Montreal Weekend Board with current listings, and check the posters 
 THE TARGET is the hosted web app, which is what the owner uses (it is installed on their phone's home screen). The old Claude artifact version of the board has been retired: do not read, edit, republish or write to it or its database in any way.
 
 APP URL: https://montreal-weekend-board-lifelikedevteam.vercel.app
-APP TOKEN (used as `Authorization: Bearer <token>` on every app call below): <the REFRESH_SECRET value; kept in the routine, not in this repository>
+APP TOKEN (used as `Authorization: Bearer <token>` on every app call below): <the REFRESH_SECRET value; kept in the task, not in this repository>
 
 The app's store is reached through one endpoint, POST /api/db with that token and a JSON body {"op", "path", "data"?}. The ops are "get" (one document: {"id","data"}, data null if absent), "list" (a collection: {"docs":[{"id","data"}]}), "set" (REPLACES the whole document with `data` — there is no merge and no version check, so always get the current document first, change only the fields you mean to, and send the complete object back) and "delete".
 The board's current listings are served by GET /api/data (same token). The body is JavaScript: parse the JSON after `window.__BOARD_DATA__=` (it holds WEEKEND, STANDING, EVENTS, AFIELD, BUSY).

@@ -181,16 +181,18 @@ In the Vercel project settings:
 | `CALENDAR_ROUTINE_URL` | Optional. The calendar routine's API trigger URL (see "Refreshing the calendar by hand"). |
 | `CALENDAR_ROUTINE_TOKEN` | Optional. That trigger's token. |
 
-Each routine has a token that does only its job. `REFRESH_SECRET` (the daily
-routine) can read this weekend's listings (`/api/data`), post a refresh
-(`/api/refresh`), read the taste profile, and read and write captured posters
+The daily scheduled task and the calendar routine each have a token that does
+only its job. `REFRESH_SECRET` (the daily task) can read this weekend's
+listings (`/api/data`), post a refresh (`/api/refresh`), plan days off and
+keep a place's sources (`/api/trip`), read the taste profile, and read and write captured posters
 under `spotted/` through `/api/db`. It cannot read or change plans or the
 board directly, delete anything, upload or read photos, or read posters
-(`lib/scope.js` holds the list). `CALENDAR_SECRET` (the calendar routine) can
+(`lib/scope.js` holds the list for `/api/db`). `CALENDAR_SECRET` (the calendar routine) can
 read and store the calendar through `/api/calendar` and nothing else. Only the
-signed-in board can start a calendar refresh. Routines read web pages, so a
+signed-in board can start a calendar refresh. Both read web pages, so a
 page that tries to steer one gets no more than its own token allows. To
-rotate a token, change it in Vercel, redeploy, and change it in the routine.
+rotate a token, change it in Vercel, redeploy, and change it in the task or
+routine that holds it.
 
 Plus two Storage integrations (Vercel dashboard, Storage tab):
 
@@ -340,15 +342,17 @@ The refresh routine reads the profile from this app's store
 token), not from the retired artifact's database. `via` tells a star from
 an add if it wants to weigh them differently.
 
-The daily refresh routine's instructions are kept in
-[docs/routine-prompt.md](docs/routine-prompt.md), so a change to them is
-reviewed with the code. The routine runs the copy stored at
-claude.ai/code/routines, so paste the file there after editing it.
+The daily refresh is a Claude scheduled task ("Daily Refresh", set not to
+require the owner's computer, so it runs in the cloud). Its instructions are
+kept in [docs/routine-prompt.md](docs/routine-prompt.md), so a change to them
+is reviewed with the code. The task runs the copy stored in its own
+instructions, so paste the file there after editing it. The calendar refresh
+below is the one that is a routine, at claude.ai/code/routines.
 
 ### Your own calendar
 
 Picks can collide with things the board has never heard of: a trip, a
-lunch, a dentist. The daily refresh routine already holds the Google
+lunch, a dentist. The daily refresh task already holds the Google
 Calendar connector, so it reads the weekend's events from the owner's
 calendar and sends them as a fifth block, `BUSY`, beside the listings:
 
