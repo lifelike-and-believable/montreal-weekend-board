@@ -95,7 +95,10 @@ export default async function handler(req, res) {
         return res.status(409).json({ code: "stale_weekend", weekendId: doc.WEEKEND.id });
       }
       const BUSY = busyForWeekend(b.BUSY, doc.WEEKEND.days);
-      const AWAY = awayForWeekend(b.AWAY, b.BUSY, doc.WEEKEND.days);
+      /* In travel mode the listings are for where the owner is, so
+         "away from Montreal" must not dim them: /api/refresh stores AWAY
+         empty there, and so does this. */
+      const AWAY = doc.WEEKEND.place ? [] : awayForWeekend(b.AWAY, b.BUSY, doc.WEEKEND.days);
       const busyAt = new Date().toISOString();
       await setDoc("board/current", { ...doc, BUSY, AWAY, busyAt });
       return res.status(200).json({ ok: true, weekendId: doc.WEEKEND.id, busy: BUSY.length, away: AWAY.length, busyAt });

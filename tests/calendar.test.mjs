@@ -116,3 +116,12 @@ test("the routine's away stretches are stored with the calendar, cut per day", a
   assert.deepEqual(doc.AWAY.map((a) => [a.day, a.allDay, a.where]), [["sat", true, "Revelstoke"], ["sun", true, "Revelstoke"]]);
   assert.equal(res.body.away, 2);
 });
+
+test("in travel mode the away stretches are not stored, so the destination's listings are not dimmed", async () => {
+  docs.set("board/current", { WEEKEND: { ...WEEKEND, place: { name: "Boston", slug: "boston" } }, EVENTS: [], BUSY: [] });
+  const res = await call("job", "POST", { op: "store", weekendId: "2026-09-26",
+    BUSY: [], AWAY: [{ start: "2026-09-25T07:30:00-04:00", end: "2026-09-28T09:00:00-04:00", where: "Boston" }] });
+  assert.equal(res.code, 200);
+  assert.equal(res.body.away, 0);
+  assert.deepEqual(docs.get("board/current").AWAY, []);
+});
