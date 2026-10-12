@@ -358,6 +358,10 @@ can only be made in the claude.ai web UI:
 2. In the Vercel project, set `CALENDAR_ROUTINE_URL` (that URL) and
    `CALENDAR_ROUTINE_TOKEN` (that token), and redeploy.
 
+The routine's instructions are kept in
+[docs/routine-calendar-prompt.md](docs/routine-calendar-prompt.md); paste
+them into the routine after editing the file.
+
 Until both are set the board shows when the calendar was read but offers
 no refresh. `/api/health` reports `calendarRoutine`.
 
