@@ -1,4 +1,4 @@
-import { isAuthed, isRefreshJob } from "../lib/auth.js";
+import { isAuthed, isCalendarJob } from "../lib/auth.js";
 import { getDoc, setDoc } from "../lib/store.js";
 import { busyForWeekend, awayForWeekend, canRefresh } from "../lib/busy.js";
 
@@ -43,7 +43,7 @@ async function fire() {
 }
 
 export default async function handler(req, res) {
-  const owner = isAuthed(req), job = isRefreshJob(req);
+  const owner = isAuthed(req), job = isCalendarJob(req);
   if (!owner && !job) return res.status(401).json({ code: "permission_denied", error: "not signed in" });
 
   try {
