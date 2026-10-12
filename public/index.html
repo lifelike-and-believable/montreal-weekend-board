@@ -356,6 +356,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .soon .rfoot{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:auto;padding-top:4px}
 .soon .thumb{width:100%;height:90px;object-fit:cover;border:1px solid var(--line-soft)}
 .pending{margin-top:34px}
+/* the guide to the place being visited: shown only in travel mode, folded
+   until opened, read-only */
+.guide{margin-top:34px}
+.guide-box{background:var(--surface);border:1px solid var(--line-soft);border-left:3px solid var(--accent)}
+.guide-sum{
+  list-style:none;cursor:pointer;padding:12px 14px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px;
+}
+.guide-sum::-webkit-details-marker{display:none}
+.guide-sum::before{content:"+";font-family:"IBM Plex Mono",monospace;color:var(--accent);width:1em}
+.guide-box[open] > .guide-sum::before{content:"\2212"}
+.guide-sum:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.guide-title{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;text-transform:uppercase;letter-spacing:.13em;font-size:11px;color:var(--ink-2)}
+.guide-meta{font-size:13px;color:var(--ink-3)}
+.guide-body{padding:2px 14px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px 20px}
+.guide-sec h3{margin:0 0 6px;font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;text-transform:uppercase;letter-spacing:.11em;font-size:10.5px;color:var(--accent)}
+.guide-sec ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
+.guide-sec li{font-size:14px;line-height:1.4;color:var(--ink-2);overflow-wrap:break-word}
+.guide-sec li b{color:var(--ink);font-weight:600}
+.guide-via{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3)}
 .pending-lede{margin:-4px 0 12px;font-size:14px;color:var(--ink-3);max-width:62ch;line-height:1.45}
 .soon.waiting{border-top-color:var(--line);opacity:.85}
 .soon.waiting .away{color:var(--ink-3)}
@@ -747,6 +766,16 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
     <p class="sect-label">Needs filling in</p>
     <p class="pending-lede">Saved with the photo, but the read didn&rsquo;t get enough to put it on the board &mdash; a title and a date are what&rsquo;s missing. Nothing reads these later, so they wait here for you. Fill one in and it joins the board straight away.</p>
     <div class="coming-grid" id="pending-grid"></div>
+  </section>
+
+  <section class="guide" id="guide" hidden>
+    <details class="guide-box">
+      <summary class="guide-sum">
+        <span class="guide-title" id="guide-title"></span>
+        <span class="guide-meta" id="guide-meta"></span>
+      </summary>
+      <div class="guide-body" id="guide-body"></div>
+    </details>
   </section>
 
   <footer class="foot">
@@ -1306,9 +1335,12 @@ var AWAY = [];
 var CAL = { busyAt: null, canRefresh: false };   /* when it was read; can the board ask again */
 /* Good sources for the place, in travel mode only: [{name,url,kind}]. */
 var SOURCES = [];
+/* The ledger's guide to that place, read-only: {visits, lastVisitedAt, guide:{areas,transit,stays,tips}, personal}, or null. */
+var GUIDE = null;
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
   if (Array.isArray(BD.SOURCES))     SOURCES  = BD.SOURCES;
+  if (BD.GUIDE && typeof BD.GUIDE === "object") GUIDE = BD.GUIDE;
   if (Array.isArray(BD.BUSY))        BUSY     = BD.BUSY;
   if (Array.isArray(BD.AWAY))        AWAY     = BD.AWAY;
   if (BD.CAL && typeof BD.CAL === "object") CAL = BD.CAL;
@@ -1718,6 +1750,56 @@ function sourcesHtml(list, label){
   }).filter(Boolean);
   if (!links.length) return '<span>No listing sources picked for ' + esc(label) + ' yet.</span>';
   return '<span>Sources for ' + esc(label) + ':</span> ' + links.join(" ");
+}
+/* One guide section: a heading and a list of {name?, note} items, or "" when it has none. */
+function guideSectionHtml(label, items){
+  var rows = (Array.isArray(items) ? items : []).map(function(it){
+    if (!it || typeof it !== "object") return "";
+    var name = it.name != null ? String(it.name).trim() : "", note = it.note != null ? String(it.note).trim() : "";
+    if (!name && !note) return "";
+    return "<li>" + (name ? "<b>" + esc(name) + "</b>" + (note ? " \u2014 " : "") : "") + esc(note) + "</li>";
+  }).filter(Boolean);
+  return rows.length ? '<div class="guide-sec"><h3>' + esc(label) + "</h3><ul>" + rows.join("") + "</ul></div>" : "";
+}
+/* The owner's own earlier picks in this place, as a section. */
+function guidePersonalHtml(list){
+  var rows = (Array.isArray(list) ? list : []).slice(0, 8).map(function(p){
+    if (!p || !p.title) return "";
+    var where = p.venue ? " \u00b7 " + esc(p.venue) : "";
+    return "<li><b>" + esc(p.title) + "</b> <span class=\"guide-via\">" + (p.via === "star" ? "starred" : "added") + where + "</span></li>";
+  }).filter(Boolean);
+  return rows.length ? '<div class="guide-sec"><h3>From your earlier trips</h3><ul>' + rows.join("") + "</ul></div>" : "";
+}
+/* "First visit", or "Been here twice before · last in Sep 2026". */
+function guideMeta(g){
+  var n = g && g.visits > 0 ? g.visits : 0;
+  if (!n) return "First visit";
+  var times = n === 1 ? "once" : n === 2 ? "twice" : n + " times";
+  var last = "";
+  if (g.lastVisitedAt && /^\d{4}-\d{2}-\d{2}$/.test(g.lastVisitedAt)) {
+    var p = g.lastVisitedAt.split("-");
+    last = " \u00b7 last in " + new Date(Date.UTC(+p[0], +p[1]-1, 1))
+      .toLocaleDateString("en-CA", { month:"short", year:"numeric", timeZone:"UTC" });
+  }
+  return "Been here " + times + " before" + last;
+}
+/* The whole body, or "" when there is nothing worth opening. */
+function guideHtml(g){
+  if (!g || typeof g !== "object") return "";
+  var gd = g.guide && typeof g.guide === "object" ? g.guide : {};
+  return guideSectionHtml("Where to be", gd.areas) + guideSectionHtml("Getting around", gd.transit) +
+    guideSectionHtml("Where to stay", gd.stays) + guideSectionHtml("Good to know", gd.tips) +
+    guidePersonalHtml(g.personal);
+}
+function applyGuide(){
+  var box = document.getElementById("guide");
+  if (!box) return;
+  var l = placeLabel(), html = l ? guideHtml(GUIDE) : "";
+  if (!html) { box.hidden = true; return; }
+  document.getElementById("guide-title").textContent = "Guide to " + l;
+  document.getElementById("guide-meta").textContent = guideMeta(GUIDE);
+  document.getElementById("guide-body").innerHTML = html;
+  box.hidden = false;
 }
 /* Away from home: the kicker, title, dateline and footer say so. */
 function applyPlace(){
@@ -3387,6 +3469,7 @@ loadTasteLocal();
 loadSpottedLocal();
 loadFold();
 applyPlace();
+applyGuide();
 renderStamp();
 loadWeather();
 renderControls();

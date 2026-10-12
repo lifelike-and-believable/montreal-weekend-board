@@ -170,6 +170,12 @@ urls). Errors are `{code,error}` with 400/401/405.
   `GET ?place=<slug>` returns the lot. A first visit is one with no trip on
   an earlier weekend; the routine does a seeding pass on it (sources and a
   guide) and leans on the ledger on a return.
+- On the board, in travel mode only, a folded "Guide to <place>" panel above the
+  footer shows the ledger read-only: the guide's four sections, how often the
+  owner has been before and when last, and up to eight of their own earlier
+  picks there. `/board-data.js` carries it as `GUIDE` (names and notes only,
+  null when the ledger has nothing yet), and the panel is hidden at home.
+  Notes are corrected through the routine (`remove`), not from the board.
 - Sources: per place at `sources/<slug>`; https only, urls normalised
   (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40 per
   place. Rank is `uses - 2*misses`; a source with 3+ misses and more misses
