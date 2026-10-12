@@ -114,6 +114,9 @@ follows the checklist below.
                     sources:[{url,name,kind,covers,note}], used:[url], dead:[url]}
                                       refresh job only; merges and stores,
                                       returns {slug,count,added,used,dead}
+    POST /api/trip {op:"alias", alias, place}
+                                      refresh job only; files another name
+                                      under that place's list
 
 Bodies are capped (100 events, 50 away spans, 50 sources, 100 used/dead
 urls). Errors are `{code,error}` with 400/401/405.
@@ -140,6 +143,17 @@ urls). Errors are `{code,error}` with 400/401/405.
   most planned days wins; ties go to the earliest.
 - To override detection, send the place yourself in `AWAY[].where` (trusted),
   or set `WEEKEND.place` directly on `/api/refresh`.
+- One place, one list: places the owner goes back to are filed under one
+  name however they are written (`lib/places.js`). "NYC", "New York City",
+  "Brooklyn, NY" and "Manhattan" are all New York, NY, with the fixed slug
+  `new-york-ny`; so are "DC", "Philly", "SF" and the other well-known ones in
+  the table there. A region or country that disagrees rules a match out
+  (Boston, Lincolnshire is not Boston, MA). "Trip to NYC" is read as a place
+  even though three capitals are otherwise an airport code. For a place the
+  table does not know, the routine files another name with
+  `{op:"alias", alias, place}`; `plan`, `sources` and `GET ?place=` then
+  follow it to the one list. Add to the table by hand when a place earns it;
+  its slug is stored with it, so editing the table never moves a list.
 - Sources: per place at `sources/<slug>`; https only, urls normalised
   (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40 per
   place. Rank is `uses - 2*misses`; a source with 3+ misses and more misses

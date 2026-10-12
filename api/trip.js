@@ -2,7 +2,7 @@ import { isAuthed, isRefreshJob } from "../lib/auth.js";
 import { listDocs } from "../lib/store.js";
 import { toLocal } from "../lib/busy.js";
 import { planWeek, cleanPlace } from "../lib/plan.js";
-import { getSources, saveSources, rankSources } from "../lib/sources.js";
+import { getSources, saveSources, rankSources, resolvePlace, resolveSlug, addAlias } from "../lib/sources.js";
 
 /* Days off and travel, for the routine that writes the listings.
 
@@ -18,6 +18,12 @@ import { getSources, saveSources, rankSources } from "../lib/sources.js";
                              owner or job   planWeek(), plus the sources for its place
      POST {op:"sources", place, sources, used, dead}
                              job            merge into the place's list
+     POST {op:"alias", alias, place}
+                             job            file another name under a place's list
+
+   A place is filed under one name however it is written: "NYC", "New York"
+   and "Brooklyn, NY" are one list (lib/places.js), and an alias the job adds
+   joins any other name to a list.
 
    The rules live in lib/plan.js and lib/sources.js. */
 
@@ -40,9 +46,9 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      const slug = req.query && req.query.place;
-      if (slug) {
-        const doc = await getSources(String(slug));
+      const asked = req.query && req.query.place;
+      if (asked) {
+        const doc = await getSources(await resolveSlug(String(asked)));
         return res.status(200).json({
           place: (doc && doc.place) || null,
           updatedAt: (doc && doc.updatedAt) || null,
@@ -79,6 +85,10 @@ export default async function handler(req, res) {
       let sources = [];
       if (plan.place) {
         try {
+          const home = await resolvePlace(plan.place);
+          if (home) { plan.place = home; plan.weekend.place = home; }
+        } catch (e) { console.error("[trip] alias", e); }
+        try {
           sources = live(await getSources(plan.place.slug), 20).map(({ url, name, kind, covers, note, uses }) =>
             ({ url, name, kind, covers, note, uses }));
         } catch (e) { console.error("[trip] sources", e); }
@@ -90,16 +100,25 @@ export default async function handler(req, res) {
       if (!job) return res.status(401).json({ code: "permission_denied", error: "refresh token required" });
       const place = cleanPlace(b.place);
       if (!place) return bad(res, "bad_place", "place needs a name, and cannot be home");
+      const filed = await resolvePlace(place);
       const lists = [["sources", MAX_SOURCES], ["used", MAX_URLS], ["dead", MAX_URLS]];
       for (const [k, max] of lists) {
         const v = b[k] == null ? [] : b[k];
         if (!Array.isArray(v) || v.length > max) return bad(res, "bad_" + k, `${k} must be an array of at most ${max}`);
       }
-      const out = await saveSources(place, { sources: b.sources || [], used: b.used || [], dead: b.dead || [] });
+      const out = await saveSources(filed, { sources: b.sources || [], used: b.used || [], dead: b.dead || [] });
       return res.status(200).json({ ok: true, ...out });
     }
 
-    return bad(res, "bad_op", "op must be plan or sources");
+    if (b.op === "alias") {
+      if (!job) return res.status(401).json({ code: "permission_denied", error: "refresh token required" });
+      let out;
+      try { out = await addAlias(b.alias, b.place); }
+      catch (e) { return bad(res, "bad_alias", String(e.message || e)); }
+      return res.status(200).json({ ok: true, ...out });
+    }
+
+    return bad(res, "bad_op", "op must be plan, sources or alias");
   } catch (e) {
     console.error("[trip]", e);
     return res.status(500).json({ code: "store_error", error: String(e.message || e) });

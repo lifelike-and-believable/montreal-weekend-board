@@ -196,7 +196,7 @@ test("days are stored sorted with name, num and kind", async () => {
 
 test("a place is cleaned, stored, and reported", async () => {
   const res = await post(tripPayload());
-  assert.equal(S.stored.data.WEEKEND.place.slug, "boston-ma-usa");
+  assert.equal(S.stored.data.WEEKEND.place.slug, "boston-ma");
   assert.equal(res.body.place.name, "Boston");
 });
 
