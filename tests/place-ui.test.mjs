@@ -201,3 +201,17 @@ test("calendar links away carry the place's own clock", () => {
   const home = mk(undefined)(r);
   assert.ok(home.includes("dates=UTC/UTC&location=") && !home.includes("ctz"));
 });
+
+test("the event that made a day off is not shown again as an occasion chip", () => {
+  const isDayOffEvent = build("isDayOffEvent", {});
+  const off = { kind: "dayoff", key: "mon", title: "PTO" };
+  assert.equal(isDayOffEvent(off, { title: "Day Off" }), true, "the stock title, any case");
+  assert.equal(isDayOffEvent(off, { title: "pto " }), true, "the title the plan recorded");
+  assert.equal(isDayOffEvent(off, { title: "Sam's birthday" }), false, "a real occasion still shows");
+  assert.equal(isDayOffEvent({ kind: "weekend", key: "sat" }, { title: "Day off" }), false, "only on a day off");
+  assert.equal(isDayOffEvent(null, { title: "Day off" }), false);
+  const chip = build("chipOccasion", { isDayOffEvent, occasionsOn: () => [{ title: "Day Off" }, { title: "Birthday" }] });
+  assert.equal(chip(off).title, "Birthday");
+  const only = build("chipOccasion", { isDayOffEvent, occasionsOn: () => [{ title: "Day Off" }] });
+  assert.equal(only(off), null);
+});

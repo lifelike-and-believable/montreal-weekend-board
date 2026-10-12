@@ -51,6 +51,7 @@ test("Friday is evening-only unless it is a day off, when it is planned all day"
 test("an all-day PTO on Wednesday in the window is a day off", () => {
   const p = plan([allDay("PTO", "2026-09-16", "2026-09-17")], [], "2026-09-11");
   assert.deepEqual(p.dayOffs, [{ date: "2026-09-16", title: "PTO" }]);
+  assert.equal(p.days.find((d) => d.key === "wed").title, "PTO", "the day records the event that made it a day off");
   assert.deepEqual(p.days.map((d) => [d.key, d.kind]), [["fri", "weekend"], ["sat", "weekend"], ["sun", "weekend"], ["wed", "dayoff"]]);
   assert.equal(p.label, "Friday 11 – Sunday 13 September 2026 + Wednesday 16 September 2026 (day off)");
 });
