@@ -87,8 +87,11 @@ follows the checklist below.
 
 - `id` is the Saturday's ISO date. `days` are sorted by date, unique by
   `key` and `date`. `key` is `sun|mon|tue|wed|thu|fri|sat`; `name` is
-  "Friday", `num` is "Fri 11 Sep"; `kind` is `weekend` (Sat/Sun) or `dayoff`
-  (Mon-Fri). `/api/refresh` fills in whatever is missing and sorts them.
+  "Friday", `num` is "Fri 11 Sep"; `kind` is `weekend` (Fri/Sat/Sun) or
+  `dayoff` (Mon-Fri). The weekend opens on the Friday evening before it: that
+  day is `kind:"weekend"` with `evening:true` (research from about 5 p.m.),
+  unless Friday is a day off, when it is `dayoff` and planned all day.
+  `/api/refresh` fills in whatever is missing and sorts them.
 - `place` is only present in travel mode:
   `{ name, region?, country?, slug, lat?, lon?, tz? }`. Absent means home
   (Montreal). `/board-data.js` also carries `SOURCES`: up to 8

@@ -21,13 +21,14 @@ test("the weekend is the next Saturday, or yesterday's on a Sunday", () => {
   assert.throws(() => weekendFor("tomorrow"));
 });
 
-test("a bare week is just the weekend, in the contract's shape", () => {
+test("a bare week is just the weekend, in the contract's shape, opening Friday evening", () => {
   const p = plan([]);
   assert.deepEqual(p.days, [
+    { key: "fri", date: "2026-09-11", name: "Friday", num: "Fri 11 Sep", kind: "weekend", evening: true },
     { key: "sat", date: "2026-09-12", name: "Saturday", num: "Sat 12 Sep", kind: "weekend" },
     { key: "sun", date: "2026-09-13", name: "Sunday", num: "Sun 13 Sep", kind: "weekend" }
   ]);
-  assert.equal(p.label, "Saturday 12 – Sunday 13 September 2026");
+  assert.equal(p.label, "Friday 11 – Sunday 13 September 2026");
   assert.equal(p.place, null);
   assert.equal(p.placeSource, null);
   assert.deepEqual(p.weekend, { id: "2026-09-12", label: p.label, days: p.days });
@@ -36,14 +37,22 @@ test("a bare week is just the weekend, in the contract's shape", () => {
 test("today=Sunday plans the weekend that is still on", () => {
   const p = plan([], [], "2026-09-13");
   assert.equal(p.weekendId, "2026-09-12");
-  assert.deepEqual(dates(p), ["2026-09-12", "2026-09-13"]);
+  assert.deepEqual(dates(p), ["2026-09-11", "2026-09-12", "2026-09-13"]);
+});
+
+test("Friday is evening-only unless it is a day off, when it is planned all day", () => {
+  const fri = (p) => p.days.find((d) => d.key === "fri");
+  assert.deepEqual([fri(plan([])).kind, fri(plan([])).evening], ["weekend", true]);
+  const off = fri(plan([allDay("Day off", "2026-09-11", "2026-09-12")], [], "2026-09-09"));
+  assert.equal(off.kind, "dayoff");
+  assert.equal(off.evening, undefined);
 });
 
 test("an all-day PTO on Wednesday in the window is a day off", () => {
   const p = plan([allDay("PTO", "2026-09-16", "2026-09-17")], [], "2026-09-11");
   assert.deepEqual(p.dayOffs, [{ date: "2026-09-16", title: "PTO" }]);
-  assert.deepEqual(p.days.map((d) => [d.key, d.kind]), [["sat", "weekend"], ["sun", "weekend"], ["wed", "dayoff"]]);
-  assert.equal(p.label, "Saturday 12 – Sunday 13 September 2026 + Wednesday 16 September 2026 (day off)");
+  assert.deepEqual(p.days.map((d) => [d.key, d.kind]), [["fri", "weekend"], ["sat", "weekend"], ["sun", "weekend"], ["wed", "dayoff"]]);
+  assert.equal(p.label, "Friday 11 – Sunday 13 September 2026 + Wednesday 16 September 2026 (day off)");
 });
 
 test("a day off outside the seven-day window is ignored", () => {
