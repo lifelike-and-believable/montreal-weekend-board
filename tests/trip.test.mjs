@@ -46,7 +46,7 @@ test("plan returns the days, the place and that place's sources", async () => {
   const r = await call("POST", { body: { op: "plan", today: "2026-09-09", away, events: [
     { title: "PTO", start: "2026-09-10", end: "2026-09-11" }] } });
   assert.equal(r.code, 200);
-  assert.deepEqual(r.body.days.map((d) => d.key), ["thu", "sat", "sun"]);
+  assert.deepEqual(r.body.days.map((d) => d.key), ["thu", "fri", "sat", "sun"]);
   assert.equal(r.body.place.slug, "boston-ma-usa");
   assert.equal(r.body.placeSource, "away");
   assert.deepEqual(r.body.sources.map((s) => s.url).sort(), ["https://a.com", "https://b.com"]);
