@@ -13,6 +13,7 @@ export default function handler(req, res) {
       BOARD_PASSCODE: has("BOARD_PASSCODE"),
       DOC_SALT: has("DOC_SALT"),
       REFRESH_SECRET: has("REFRESH_SECRET"),
+      CALENDAR_SECRET: has("CALENDAR_SECRET"),
       ANTHROPIC_API_KEY: has("ANTHROPIC_API_KEY"),
       redis: has("KV_REST_API_URL") || has("UPSTASH_REDIS_REST_URL"),
       blob: has("BLOB_READ_WRITE_TOKEN"),

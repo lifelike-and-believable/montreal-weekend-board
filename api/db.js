@@ -1,6 +1,7 @@
 import { gate } from "../lib/auth.js";
 import { cleanPath, getDoc, setDoc, deleteDoc, listDocs } from "../lib/store.js";
 import { relocate } from "../lib/location.js";
+import { jobMayUseDb } from "../lib/scope.js";
 
 /* Posters are written here, not through the refresh, so they never pass
    through the step that reads a listing's `hood` into `loc`, and without
@@ -10,7 +11,7 @@ const located = (p, doc) => (p === "spotted" || p.startsWith("spotted/") ? reloc
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  if (!gate(req, res)) return;
+  if (!gate(req, res, () => jobMayUseDb(req.body))) return;
 
   const { op, path, data } = req.body || {};
   const p = cleanPath(path);

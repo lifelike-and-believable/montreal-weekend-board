@@ -11,7 +11,7 @@ const docs = new Map();
 mock.module(url("lib/auth.js"), {
   namedExports: {
     isAuthed: (req) => req.who === "owner",
-    isRefreshJob: (req) => req.who === "job"
+    isCalendarJob: (req) => req.who === "job"
   }
 });
 mock.module(url("lib/store.js"), {

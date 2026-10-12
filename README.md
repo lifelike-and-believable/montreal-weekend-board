@@ -83,10 +83,22 @@ In the Vercel project settings:
 | `BOARD_PASSCODE` | The passcode you type on first launch. |
 | `DOC_SALT` | `openssl rand -hex 16`. Namespaces documents and photo paths. |
 | `REFRESH_SECRET` | `openssl rand -base64 32`. Bearer token for the daily refresh job. |
+| `CALENDAR_SECRET` | `openssl rand -base64 32`. Bearer token for the calendar routine only. Until it is set, `REFRESH_SECRET` is accepted there as well. |
 | `ANTHROPIC_API_KEY` | Poster reading. |
 | `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5`. |
 | `CALENDAR_ROUTINE_URL` | Optional. The calendar routine's API trigger URL (see "Refreshing the calendar by hand"). |
 | `CALENDAR_ROUTINE_TOKEN` | Optional. That trigger's token. |
+
+Each routine has a token that does only its job. `REFRESH_SECRET` (the daily
+routine) can read this weekend's listings (`/api/data`), post a refresh
+(`/api/refresh`), read the taste profile, and read and write captured posters
+under `spotted/` through `/api/db`. It cannot read or change plans or the
+board directly, delete anything, upload or read photos, or read posters
+(`lib/scope.js` holds the list). `CALENDAR_SECRET` (the calendar routine) can
+read and store the calendar through `/api/calendar` and nothing else. Only the
+signed-in board can start a calendar refresh. Routines read web pages, so a
+page that tries to steer one gets no more than its own token allows. To
+rotate a token, change it in Vercel, redeploy, and change it in the routine.
 
 Plus two Storage integrations (Vercel dashboard, Storage tab):
 
