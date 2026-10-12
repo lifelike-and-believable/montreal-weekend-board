@@ -85,7 +85,7 @@ In the Vercel project settings:
 | `REFRESH_SECRET` | `openssl rand -base64 32`. Bearer token for the daily refresh job. |
 | `CALENDAR_SECRET` | `openssl rand -base64 32`. Bearer token for the calendar routine only. Until it is set, `REFRESH_SECRET` is accepted there as well. |
 | `ANTHROPIC_API_KEY` | Poster reading. |
-| `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5`. |
+| `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5-5`, the current Sonnet. Leave it unset to follow the code's default; set it only to pin a different model. |
 | `CALENDAR_ROUTINE_URL` | Optional. The calendar routine's API trigger URL (see "Refreshing the calendar by hand"). |
 | `CALENDAR_ROUTINE_TOKEN` | Optional. That trigger's token. |
 

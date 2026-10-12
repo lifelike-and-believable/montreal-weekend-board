@@ -1,6 +1,5 @@
 import { gate } from "../lib/auth.js";
-
-const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+import { MODEL } from "../lib/model.js";
 
 /** Models sometimes wrap JSON in prose or a code fence. Dig it out. */
 function parseJson(text) {

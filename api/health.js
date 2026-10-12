@@ -1,4 +1,5 @@
 import { isAuthed } from "../lib/auth.js";
+import { MODEL } from "../lib/model.js";
 
 /* Reports which pieces of configuration are present. Booleans only —
    never a value. Safe to hit unauthenticated so setup can be checked
@@ -19,6 +20,6 @@ export default function handler(req, res) {
       blob: has("BLOB_READ_WRITE_TOKEN"),
       calendarRoutine: has("CALENDAR_ROUTINE_URL") && has("CALENDAR_ROUTINE_TOKEN")
     },
-    model: process.env.ANTHROPIC_MODEL || "claude-sonnet-5"
+    model: MODEL
   });
 }
