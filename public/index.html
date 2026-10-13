@@ -2912,8 +2912,11 @@ function renderPlan(){
       var hitPick = !x.b && lastPick && x.at != null &&
         x.at < lastPick.at + (lastPick.r.item.dur || 120);
       if (hitPick) {
-        html += '<div class="gap clash"><span></span><span>⚠ overlaps ' + esc(lastPick.r.item.title) +
-                ' by about ' + (lastPick.at + (lastPick.r.item.dur || 120) - x.at) + ' min — one of these has to go</span></div>';
+        /* the note sits between the two rows, so it names both rather than
+           reading as if the row above overlaps itself */
+        html += '<div class="gap clash"><span></span><span>⚠ ' + esc(lastPick.r.item.title) +
+                ' runs about ' + (lastPick.at + (lastPick.r.item.dur || 120) - x.at) + ' min into ' +
+                esc(x.r.item.title) + ' — one of these has to go</span></div>';
       } else if (prev && prev.at != null && x.at != null) {
         /* no gap is worked out across another clock or an away stretch */
         var odd = function(y){ return y.b && (y.b.zone || y.b.away); };
