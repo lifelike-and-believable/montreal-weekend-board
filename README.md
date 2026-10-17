@@ -43,6 +43,10 @@ belongs, not because it has to:
     api/db.js                  document read/write
     api/upload.js              poster photo upload
     api/read-poster.js         Anthropic vision proxy (holds the API key)
+    api/read-page.js           the same read for an event's web page:
+                               fetches the link, answers in the poster's shape
+    lib/page.js                where a page fetch may go, and what of the
+                               HTML the model gets to read
     api/blob.js                serves /_blob/<photoId>, the asset path
                                the board builds for poster photos
     api/data.js                serves /board-data.js — the four data
@@ -215,7 +219,7 @@ In the Vercel project settings:
 | `DOC_SALT` | `openssl rand -hex 16`. Namespaces documents and photo paths. |
 | `REFRESH_SECRET` | `openssl rand -base64 32`. Bearer token for the daily refresh job. |
 | `CALENDAR_SECRET` | `openssl rand -base64 32`. Bearer token for the calendar routine only. Until it is set, `REFRESH_SECRET` is accepted there as well. |
-| `ANTHROPIC_API_KEY` | Poster reading. |
+| `ANTHROPIC_API_KEY` | Poster and event-page reading. |
 | `ANTHROPIC_MODEL` | Optional. Defaults to `claude-sonnet-5-5`, the current Sonnet. Leave it unset to follow the code's default; set it only to pin a different model. |
 | `CALENDAR_ROUTINE_URL` | Optional. The calendar routine's API trigger URL (see "Refreshing the calendar by hand"). |
 | `CALENDAR_ROUTINE_TOKEN` | Optional. That trigger's token. |
@@ -320,6 +324,35 @@ a record saved before any of this still gets a working link.
 
 The field is now a plain text input: `type="url"` marks a bare host invalid
 and offers nothing in return, given the scheme is added here anyway.
+
+### Event pages as well as posters
+
+"Add a poster" also takes a link: paste an event's page under the photo
+buttons and `api/read-page.js` fetches it, cuts it down to the title, the
+meta and Open Graph lines, any schema.org JSON-LD (ticketing sites put the
+date, venue and price there in plain fields) and the visible text, and
+asks for the same JSON a poster read returns. The same form comes back,
+to check before saving.
+
+- The record is stored like a poster, with `source: "page"` and `pageUrl`
+  (the URL the page landed on after redirects). Its title links to the
+  ticket link the page gave, or to the page itself. Cards say "From a web
+  page"; a refresh twin says "Your link, now listed".
+- The fetch goes only to public web pages: http(s), ports 80/443, no
+  credentials in the URL, and every redirect hop's host must resolve to a
+  public address (no loopback, private ranges, or cloud metadata). HTML
+  is read up to 2 MB; the model sees at most about 24,000 characters.
+  The DNS check and the fetch resolve separately, so a host that changes
+  its answer in between could slip past; the endpoint is behind the
+  passcode, which is the boundary that matters here.
+- A page that draws itself entirely with script (no JSON-LD, no meta, very
+  little text) is reported as unreadable instead of guessed at. Sites that
+  turn away non-browser readers (Facebook events, often) fail the fetch;
+  either way the form opens to fill in by hand and the link is kept.
+- The page text is untrusted. It goes to the model as data, and the only
+  thing a page that tries to steer the read can reach is the form the
+  owner checks before saving.
+- No thumbnail is kept for a page; `photoId` stays empty.
 
 ### When the refresh catches up with a poster
 

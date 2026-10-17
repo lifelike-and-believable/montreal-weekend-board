@@ -317,6 +317,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .filebtn.ghost:hover{background:transparent;border-color:var(--accent);color:var(--accent-2)}
 .sr-file:focus-visible + .filebtn,.filebtn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .cap-hint{margin:0;font-size:13px;color:var(--ink-3)}
+.cap-or{margin:0;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.08em}
+.cap-link{display:flex;gap:8px;width:100%;max-width:420px}
+.cap-link input{
+  flex:1;min-width:0;box-sizing:border-box;background:var(--surface-2);color:var(--ink);
+  border:1px solid var(--line);border-radius:3px;padding:8px 10px;
+  font-family:"IBM Plex Mono",monospace;font-size:13px;
+}
+.cap-page{margin:0;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);word-break:break-all}
+.cap-page a{color:var(--accent)}
 .cap-status.err{color:var(--brick)}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fields .wide{grid-column:1/-1}
@@ -799,7 +808,7 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
 <div class="cap-overlay" id="cap-overlay" hidden>
   <section class="cap" role="dialog" aria-modal="true" aria-labelledby="cap-h">
     <h2 id="cap-h">Add a poster</h2>
-    <p class="lede" id="cap-lede">Photograph a poster or flyer and I'll read the details off it. Check what I got before saving — posters lie about as often as they don't.</p>
+    <p class="lede" id="cap-lede">Photograph a poster or flyer, or paste the link to an event's page, and I'll read the details off it. Check what I got before saving — posters and pages lie about as often as they don't.</p>
 
     <div class="cap-drop" id="cap-drop">
       <img class="cap-shot" id="cap-shot" alt="The poster you selected" hidden>
@@ -810,6 +819,12 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
         <input type="file" id="cap-lib" accept="image/*" class="sr-file">
       </div>
       <p class="cap-hint" id="cap-hint">A straight-on shot of the whole poster reads best. HEIC shots from an iPhone are fine — they're converted here.</p>
+      <p class="cap-or" id="cap-or">or</p>
+      <form class="cap-link" id="cap-link" novalidate>
+        <input id="cap-url" type="url" aria-label="Link to the event's page" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Event page link">
+        <button class="btn" type="submit" id="cap-url-go">Read the page</button>
+      </form>
+      <p class="cap-page" id="cap-page" hidden></p>
       <p class="cap-status" id="cap-status"></p>
     </div>
 
@@ -825,7 +840,7 @@ footer.foot a:hover{color:var(--accent);border-color:var(--accent)}
         <div class="f wide"><label for="f-venue">Venue</label><input id="f-venue" type="text"></div>
         <div class="f wide"><label for="f-hood">Address or neighbourhood</label><input id="f-hood" type="text"></div>
         <div class="f"><label for="f-price">Price as printed</label><input id="f-price" type="text" placeholder="$25 / Free"></div>
-        <div class="f"><label for="f-url">Link on the poster</label><input id="f-url" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="jackalope.co/festival"></div>
+        <div class="f"><label for="f-url" id="f-url-label">Link on the poster</label><input id="f-url" type="text" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="jackalope.co/festival"></div>
         <div class="f wide"><label for="f-note">Anything else worth keeping</label><textarea id="f-note"></textarea></div>
       </div>
     </div>
@@ -1645,6 +1660,7 @@ function persist(){ saveLocal(); saveRemote(); }
 var spotted = [];          // array of records
 var spottedCol = null;     // db collection ref
 var sampleFn = null, sampleCaps = null, assetsNs = null;
+var sampleNs = null;   /* the sample namespace itself: reading a page needs no image support */
 var SLS = "mtl-weekend-spotted";
 
 function loadSpottedLocal(){
@@ -1722,6 +1738,27 @@ function posterPromptHead(){
   "- Times are 24-hour, \"HH:MM\".\n" +
   "- A run of several days gives a startDate and a later endDate; a one-night event gives the same date for both.\n" +
   "- Posters are often in French. Translate the title only if the poster itself gives an English title; otherwise keep it as printed.\n\n" +
+  "Reply with only a JSON object of this shape:\n" +
+  '{"title":string,"sub":string|null,"cat":"theatre"|"film"|"music"|"dance"|"museum"|"fest"|"market",' +
+  '"startDate":"YYYY-MM-DD"|null,"endDate":"YYYY-MM-DD"|null,"time":"HH:MM"|null,' +
+  '"venue":string|null,"address":string|null,"price":string|null,"free":boolean,' +
+  '"url":string|null,"language":string|null,"confidence":"high"|"medium"|"low","unreadable":[string]}';
+}
+/* The same read, for an event's web page instead of a photo. The reply has
+   the poster's shape exactly, so one form takes either. */
+function pagePromptHead(){
+  var l = placeLabel();
+  return "Above is the text of a web page for an event in or near " + (l || "Montreal, Quebec") + ": its title, meta tags, any structured data, and the visible text. " +
+  "Read what the page actually says and pull out the details of the one event it is about.\n\n" +
+  "Rules:\n" +
+  "- Never invent a detail. If something is not on the page, use null.\n" +
+  "- Structured data (JSON-LD) is usually the most exact source for dates, times, venue and price; prefer it when it agrees with the text.\n" +
+  "- If the page lists many events, read the main one; if there is no clear main one, read the first and set confidence to \"low\".\n" +
+  "- A date with no year means the next time that date occurs after today.\n" +
+  "- Times are 24-hour, \"HH:MM\", local to the event.\n" +
+  "- A run of several days gives a startDate and a later endDate; a one-night event gives the same date for both.\n" +
+  "- Pages are often in French. Translate the title only if the page itself gives an English title; otherwise keep it as written.\n" +
+  "- url is a ticket or booking link if the page gives one, else null.\n\n" +
   "Reply with only a JSON object of this shape:\n" +
   '{"title":string,"sub":string|null,"cat":"theatre"|"film"|"music"|"dance"|"museum"|"fest"|"market",' +
   '"startDate":"YYYY-MM-DD"|null,"endDate":"YYYY-MM-DD"|null,"time":"HH:MM"|null,' +
@@ -1860,7 +1897,7 @@ function spottedAsEvent(rec, dayKey){
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "", loc: rec.loc || null,
     url: normUrl(rec.url), note: rec.note || "",
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
-    spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
+    spotted: true, source: rec.source || "poster", status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
 }
 function spottedAsStanding(rec){
@@ -1870,7 +1907,7 @@ function spottedAsStanding(rec){
     venue: rec.venue || "Venue on the poster", hood: rec.hood || "", loc: rec.loc || null,
     when: prettyDate(from) + (to && to !== from ? " – " + prettyDate(to) : ""),
     free: !!rec.free, price: rec.free ? null : (rec.price || null),
-    note: rec.note || "", spotted: true, status: rec.status || "new", recId: rec.id, star: rec.star || null
+    note: rec.note || "", spotted: true, source: rec.source || "poster", status: rec.status || "new", recId: rec.id, star: rec.star || null
   };
 }
 /* ----- when the refresh catches up with a poster -------------------
@@ -2098,7 +2135,7 @@ function splitSpotted(){
   /* The listings are the same objects every render, so last render's
      hand-over is cleared before this one's is worked out. */
   var rows = onlineIndex();
-  rows.forEach(function(r){ r.item.recId = null; r.item.fromPoster = false; });
+  rows.forEach(function(r){ r.item.recId = null; r.item.fromPoster = false; r.item.fromPage = false; });
   spotted.forEach(function(rec){
     if (rec.status === "rejected") return;
     if (rec.needsRead) return;        /* too thin for the board; waiting on you */
@@ -2114,6 +2151,7 @@ function splitSpotted(){
     if (twin) {                       /* the refresh has it: it says it better */
       twin.recId = rec.id;
       twin.fromPoster = true;
+      twin.fromPage = rec.source === "page";
       out.merged++;
       return;
     }
@@ -2340,12 +2378,12 @@ function tagsFor(e){
   if (e.free) h += '<span class="tag free">Free</span>';
   else if (e.price) h += '<span class="tag price">' + esc(e.price) + '</span>';
   if (e.spotted) {
-    h += '<span class="tag poster">From a poster</span>';
+    h += '<span class="tag poster">' + (e.source === "page" ? "From a web page" : "From a poster") + '</span>';
     if (e.status !== "verified") h += '<span class="tag unver">Not checked yet</span>';
   } else if (e.fromPoster) {
     /* You photographed this one; the refresh has since listed it, which
        is the check the poster card was waiting for. */
-    h += '<span class="tag poster">Poster, now listed</span>';
+    h += '<span class="tag poster">' + (e.fromPage ? "Your link, now listed" : "Poster, now listed") + '</span>';
   }
   return h;
 }
@@ -2399,14 +2437,16 @@ function renderPending(){
     var src = r.photoId ? "/_blob/" + r.photoId : "";
     var when = r.capturedAt ? new Date(r.capturedAt).toLocaleDateString("en-CA",
       { weekday:"short", day:"numeric", month:"short", timeZone:"America/Toronto" }) : "";
-    var name = (r.title && r.title !== "Untitled event") ? r.title : "Poster to fill in";
+    var page = r.source === "page";
+    var name = (r.title && r.title !== "Untitled event") ? r.title : (page ? "Page to fill in" : "Poster to fill in");
+    var verb = page ? "saved" : "photographed";
     return '<article class="soon waiting">' +
       (src ? '<img class="thumb" src="' + esc(src) + '" alt="The poster you photographed">' : '') +
-      '<span class="away">' + esc(when ? "photographed " + when : "photographed") + '</span>' +
+      '<span class="away">' + esc(when ? verb + " " + when : verb) + '</span>' +
       '<h3>' + esc(name) + '</h3>' +
       '<p class="when">' + esc(r.startDate ? prettyDate(r.startDate) : "no date yet") + '</p>' +
       '<div class="rfoot">' +
-      '<span class="tag poster">From a poster</span>' +
+      '<span class="tag poster">' + (page ? "From a web page" : "From a poster") + '</span>' +
       '<span class="tag unver">Needs a title and a date</span>' +
       '<button class="editbtn" data-editrec="' + esc(r.id) + '">Fill in now</button>' +
       '</div></article>';
@@ -2989,15 +3029,17 @@ function slotHtml(time, r, place, after, k, clash){
    Capture: photograph a poster, read it, check it, keep it.
    ============================================================ */
 var capFile = null, capEditing = null, capAbort = null;
+var capPage = "";           /* the event page's URL, when it came from a link */
 var samplePromise = null;   /* resolves to the sample fn, or null */
-var capParsed = false;      /* did the page manage to read this photo itself? */
+var capParsed = false;      /* did the board manage to read this photo or page itself? */
 
 /* Built at load, after __BOARD_DATA__ has set WEEKEND (and so the place). */
 var POSTER_PROMPT_HEAD = posterPromptHead();
+var PAGE_PROMPT_HEAD = pagePromptHead();
 
 function capOpen(rec){
   capEditing = rec || null;
-  capFile = null; capParsed = false;
+  capFile = null; capPage = ""; capParsed = false;
   document.getElementById("cap-overlay").hidden = false;
   document.getElementById("cap-warn").hidden = true;
   var drop = document.getElementById("cap-drop");
@@ -3006,10 +3048,12 @@ function capOpen(rec){
   st.className = "cap-status"; st.textContent = "";
   document.getElementById("cap-file").value = "";
   document.getElementById("cap-lib").value = "";
+  document.getElementById("cap-url").value = "";
+  capShowPage(rec ? rec.pageUrl : "");
   document.getElementById("cap-h").textContent = rec ? "Edit this event" : "Add a poster";
   document.getElementById("cap-lede").textContent = rec
     ? "Fix anything that came out wrong. The board updates as soon as you save."
-    : "Photograph a poster or flyer and I'll read the details off it. Check what I got before saving — posters lie about as often as they don't.";
+    : "Photograph a poster or flyer, or paste the link to an event's page, and I'll read the details off it. Check what I got before saving — posters and pages lie about as often as they don't.";
   document.getElementById("cap-delete").hidden = !rec;
   document.getElementById("cap-retry").hidden = true;
   drop.hidden = !!rec;
@@ -3017,17 +3061,16 @@ function capOpen(rec){
 
   if (rec) {
     var srcRec = rec.photoId ? "/_blob/" + rec.photoId : "";
-    if (srcRec) {
-      shot.src = srcRec; shot.hidden = false; drop.hidden = false;
-      document.getElementById("cap-buttons").hidden = true;
-      document.getElementById("cap-hint").hidden = true;
+    if (srcRec) { shot.src = srcRec; shot.hidden = false; }
+    if (srcRec || rec.pageUrl) {
+      drop.hidden = false;
+      capInputsHidden(true);
     }
     fillForm(rec);
     document.getElementById("cap-form").hidden = false;
     document.getElementById("cap-save").hidden = false;
   } else {
-    document.getElementById("cap-buttons").hidden = false;
-    document.getElementById("cap-hint").hidden = false;
+    capInputsHidden(false);
     document.getElementById("cap-form").hidden = true;
     document.getElementById("cap-save").hidden = true;
   }
@@ -3035,13 +3078,28 @@ function capOpen(rec){
 function capClose(){
   if (capAbort) { try { capAbort.abort(); } catch(e){} capAbort = null; }
   document.getElementById("cap-overlay").hidden = true;
-  capFile = null; capEditing = null;
+  capFile = null; capPage = ""; capEditing = null;
+}
+/* The photo buttons, their hint and the link row come and go together. */
+function capInputsHidden(h){
+  ["cap-buttons", "cap-hint", "cap-or", "cap-link"].forEach(function(id){
+    document.getElementById(id).hidden = h;
+  });
+}
+/* Under the photo buttons, the page a record was read from, as a link. */
+function capShowPage(url){
+  var el = document.getElementById("cap-page");
+  var href = safeHttpUrl(url);
+  el.hidden = !href;
+  el.innerHTML = href ? 'Read from <a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(href) + '</a>' : "";
+  document.getElementById("f-url-label").textContent = href ? "Tickets or booking link" : "Link on the poster";
 }
 function fillForm(r){
   var v = function(id, val){ document.getElementById(id).value = val == null ? "" : val; };
   v("f-title", r.title); v("f-sub", r.sub); v("f-time", r.time);
   v("f-start", r.startDate); v("f-end", r.endDate || r.startDate);
-  v("f-venue", r.venue); v("f-hood", r.hood); v("f-url", r.url); v("f-note", r.note);
+  v("f-venue", r.venue); v("f-hood", r.hood); v("f-note", r.note);
+  v("f-url", r.pageUrl && r.url === r.pageUrl ? "" : r.url);
   v("f-price", r.free ? "Free" : (r.price || ""));
   document.getElementById("f-cat").value = CATMAP[r.cat] ? r.cat : "fest";
 }
@@ -3054,10 +3112,12 @@ function readForm(){
     title: g("f-title") || "Untitled event",
     sub: g("f-sub"), cat: document.getElementById("f-cat").value,
     startDate: start || null, endDate: end || null, time: g("f-time") || null,
-    venue: g("f-venue"), hood: g("f-hood"), url: normUrl(g("f-url")), note: g("f-note"),
+    venue: g("f-venue"), hood: g("f-hood"), url: normUrl(g("f-url")) || pageLink(), note: g("f-note"),
     free: /^(free|gratuit|entr[ée]e libre)$/i.test(price), price: price || null,
     photoId: capEditing ? capEditing.photoId : null,
-    source: "poster", spotted: true,
+    source: capPage ? "page" : (capEditing && capEditing.source) || "poster",
+    pageUrl: capPage || (capEditing && capEditing.pageUrl) || null,
+    spotted: true,
     status: capEditing && capEditing.status === "verified" ? "verified" : "new",
     star: capEditing ? (capEditing.star || null) : null,
     verifiedNote: capEditing ? (capEditing.verifiedNote || null) : null,
@@ -3133,6 +3193,50 @@ function capSetStatus(msg, isErr){
   st.className = "cap-status" + (isErr ? " err" : "");
 }
 
+/* What a read leaves behind, poster or page: the form filled in, and a
+   warning over it when the read came back thin. */
+function capTakeRead(d, what){
+  var drop = document.getElementById("cap-drop");
+  capAbort = null;
+  drop.classList.remove("busy");
+  if (!d || typeof d !== "object") throw { code: "invalid_json" };
+  var rec = {
+    title: d.title || "", sub: d.sub || "", cat: CATMAP[d.cat] ? d.cat : "fest",
+    startDate: normDate(d.startDate), endDate: normDate(d.endDate || d.startDate),
+    time: normTime(d.time), venue: d.venue || "", hood: d.address || "",
+    url: normUrl(d.url), price: d.free ? "Free" : (d.price || ""), free: !!d.free,
+    note: d.language && !/english/i.test(d.language) ? (what + " says: " + d.language) : ""
+  };
+  fillForm(rec);
+  document.getElementById("cap-form").hidden = false;
+  document.getElementById("cap-save").hidden = false;
+  var gaps = [];
+  if (!rec.startDate) gaps.push("no date");
+  if (!d.venue) gaps.push("no venue");
+  if (Array.isArray(d.unreadable) && d.unreadable.length) gaps.push("couldn't read: " + d.unreadable.join(", "));
+  var warn = document.getElementById("cap-warn");
+  if (gaps.length || d.confidence === "low") {
+    warn.textContent = "Read this one with care — " + (gaps.length ? gaps.join("; ") : "the " + what.toLowerCase() + " was hard to make out") + ". Fill in what's missing.";
+    warn.hidden = false;
+  } else { warn.hidden = true; }
+  capParsed = !!(rec.title && rec.startDate);
+  document.getElementById("cap-retry").hidden = false;
+  capSetStatus(d.confidence === "high" ? "Read it. Check the details below." : "Read it, roughly. Check the details below.");
+}
+/* A read that failed still leaves the form open, to fill in by hand. */
+function capReadFailed(e, msgFor){
+  capAbort = null;
+  document.getElementById("cap-drop").classList.remove("busy");
+  var code = (e && e.code) || "";
+  if (code === "cancelled" || (e && e.name === "AbortError")) return;
+  var msg = msgFor(code) || "Couldn't read that one — fill the details in yourself below.";
+  if (code === "rate_limited") msg = "Too many reads at once — wait a moment, or fill it in by hand.";
+  capSetStatus(msg, true);
+  document.getElementById("cap-retry").hidden = false;
+  document.getElementById("cap-form").hidden = false;
+  document.getElementById("cap-save").hidden = false;
+}
+
 function capReadPoster(file){
   var drop = document.getElementById("cap-drop");
   var shot = document.getElementById("cap-shot");
@@ -3146,47 +3250,73 @@ function capReadPoster(file){
   capAbort = new AbortController();
   var prompt = POSTER_PROMPT_HEAD + "\n\nToday's date is " + todayISO() + ".";
   sampleFn.json(prompt, { images: file, signal: capAbort.signal, cache: false })
-    .then(function(d){
-      capAbort = null;
-      drop.classList.remove("busy");
-      if (!d || typeof d !== "object") throw { code: "invalid_json" };
-      var rec = {
-        title: d.title || "", sub: d.sub || "", cat: CATMAP[d.cat] ? d.cat : "fest",
-        startDate: normDate(d.startDate), endDate: normDate(d.endDate || d.startDate),
-        time: normTime(d.time), venue: d.venue || "", hood: d.address || "",
-        url: normUrl(d.url), price: d.free ? "Free" : (d.price || ""), free: !!d.free,
-        note: d.language && !/english/i.test(d.language) ? ("Poster says: " + d.language) : ""
-      };
-      fillForm(rec);
-      document.getElementById("cap-form").hidden = false;
-      document.getElementById("cap-save").hidden = false;
-      var gaps = [];
-      if (!rec.startDate) gaps.push("no date");
-      if (!d.venue) gaps.push("no venue");
-      if (Array.isArray(d.unreadable) && d.unreadable.length) gaps.push("couldn't read: " + d.unreadable.join(", "));
-      var warn = document.getElementById("cap-warn");
-      if (gaps.length || d.confidence === "low") {
-        warn.textContent = "Read this one with care — " + (gaps.length ? gaps.join("; ") : "the image was hard to make out") + ". Fill in what's missing.";
-        warn.hidden = false;
-      } else { warn.hidden = true; }
-      capParsed = !!(rec.title && rec.startDate);
-      document.getElementById("cap-retry").hidden = false;
-      capSetStatus(d.confidence === "high" ? "Read it. Check the details below." : "Read it, roughly. Check the details below.");
+    .then(function(d){ capTakeRead(d, "Poster"); })
+    .catch(function(e){
+      capReadFailed(e, function(code){
+        if (code === "not_granted") return "Reading posters needs your permission for Claude to look at the image. Fill it in by hand, or reload and allow it.";
+        if (code === "image_rejected") return "That image couldn't be opened — try taking it again, or pick a JPEG or PNG.";
+        if (code === "images_unavailable") return "Reading images isn't available on this account. Fill it in by hand below.";
+        return "";
+      });
+    });
+}
+
+/* The ticket link the form falls back to: the page itself, when it came
+   from one. */
+function pageLink(){
+  return capPage || (capEditing && capEditing.pageUrl) || "";
+}
+
+/* A link instead of a photo. The server fetches the page and answers in
+   the poster's shape, so the rest is the same form. */
+function capReadPage(raw, waited){
+  var url = normUrl(raw);
+  if (!/^https?:/i.test(url)) {
+    capSetStatus("That doesn't look like a web address — paste the whole link.", true);
+    return;
+  }
+  /* the sample capability resolves after the page loads; wait for it once */
+  if (!sampleNs && samplePromise && !waited) {
+    capSetStatus("Reading the page… this takes a few seconds.");
+    samplePromise.then(function(){ capReadPage(url, true); });
+    return;
+  }
+  var ns = sampleNs;
+  if (!ns || !ns.page) {
+    capSetStatus("Claude isn't reachable from this view, so the page can't be read. Fill it in by hand below.", true);
+    document.getElementById("cap-form").hidden = false;
+    document.getElementById("cap-save").hidden = false;
+    return;
+  }
+  /* a link replaces a photo picked earlier in this dialog, not the other way round */
+  capFile = null; capPage = url;
+  document.getElementById("cap-shot").hidden = true;
+  document.getElementById("cap-url").value = url;
+  capShowPage(url);
+  var drop = document.getElementById("cap-drop");
+  drop.classList.add("busy");
+  capSetStatus("Reading the page… this takes a few seconds.");
+  document.getElementById("cap-form").hidden = true;
+  document.getElementById("cap-save").hidden = true;
+
+  capParsed = false;
+  if (capAbort) { try { capAbort.abort(); } catch(e){} }
+  capAbort = new AbortController();
+  var prompt = PAGE_PROMPT_HEAD + "\n\nToday's date is " + todayISO() + ".";
+  ns.page(prompt, url, { signal: capAbort.signal })
+    .then(function(j){
+      /* keep where the page landed after redirects: it is the one to go back to */
+      if (j && j.url && safeHttpUrl(j.url)) { capPage = safeHttpUrl(j.url); capShowPage(capPage); }
+      capTakeRead(j && j.result, "Page");
     })
     .catch(function(e){
-      capAbort = null;
-      drop.classList.remove("busy");
-      var code = (e && e.code) || "";
-      var msg = "Couldn't read that one — fill the details in yourself below.";
-      if (code === "cancelled") return;
-      if (code === "not_granted") msg = "Reading posters needs your permission for Claude to look at the image. Fill it in by hand, or reload and allow it.";
-      else if (code === "rate_limited") msg = "Too many reads at once — wait a moment, or fill it in by hand.";
-      else if (code === "image_rejected") msg = "That image couldn't be opened — try taking it again, or pick a JPEG or PNG.";
-      else if (code === "images_unavailable") msg = "Reading images isn't available on this account. Fill it in by hand below.";
-      capSetStatus(msg, true);
-      document.getElementById("cap-retry").hidden = false;
-      document.getElementById("cap-form").hidden = false;
-      document.getElementById("cap-save").hidden = false;
+      capReadFailed(e, function(code){
+        if (code === "page_empty") return "That page draws itself with script, so there was nothing to read. Fill it in by hand — the link is kept.";
+        if (code === "blocked_url" || code === "bad_url") return "That link can't be read from here. Check it, or fill it in by hand below.";
+        if (code === "not_html") return "That link isn't a web page. If it's an image of the poster, save it and use Choose an existing photo.";
+        if (code === "fetch_failed") return "The page wouldn't load from here — some sites turn readers away. Fill it in by hand; the link is kept.";
+        return "";
+      });
     });
 }
 
@@ -3199,7 +3329,7 @@ function capSave(){
      take the photo. This flag now means that read did not produce enough to
      put on the board, so the record waits for you rather than for a job. */
   var thin = !rec.title || rec.title === "Untitled event" || !rec.startDate;
-  rec.needsRead = (!capParsed && !!capFile) || thin;
+  rec.needsRead = (!capParsed && (!!capFile || !!capPage)) || thin;
 
   var done = function(){
     btn.disabled = false;
@@ -3291,7 +3421,12 @@ document.addEventListener("keydown", function(ev){
 });
 document.getElementById("cap-save").addEventListener("click", capSave);
 document.getElementById("cap-retry").addEventListener("click", function(){
-  if (capFile && (sampleFn || samplePromise)) capReadPoster(capFile);
+  if (capPage) capReadPage(capPage);
+  else if (capFile && (sampleFn || samplePromise)) capReadPoster(capFile);
+});
+document.getElementById("cap-link").addEventListener("submit", function(ev){
+  ev.preventDefault();
+  capReadPage(document.getElementById("cap-url").value);
 });
 document.getElementById("cap-delete").addEventListener("click", function(){
   if (!capEditing) return;
@@ -3303,7 +3438,7 @@ function onPhotoPicked(){
   if (!f) return;
   capSetStatus("Preparing the photo…");
   normalizeImage(f).then(function(nf){
-    capFile = nf;
+    capFile = nf; capPage = ""; capShowPage("");
     try { var sh = document.getElementById("cap-shot"); sh.src = URL.createObjectURL(nf); sh.hidden = false; } catch(e){}
     capSetStatus("Reading the poster… this takes a few seconds.");
     /* the sample capability resolves after the page loads, so wait for it
@@ -3491,6 +3626,7 @@ function connectStore(isRetry){
      disables HEIC library photos in the iOS picker. */
   samplePromise = window.claude.use("sample").then(function(sf){
     if (!sf) { diag.sample = "not served in this view"; return null; }
+    sampleNs = sf;
     return sf.limits().then(function(l){
       sampleCaps = l;
       if (l && l.images) { sampleFn = sf; diag.sample = "ok (images)"; return sf; }
