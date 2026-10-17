@@ -1,16 +1,6 @@
 import { gate } from "../lib/auth.js";
 import { MODEL } from "../lib/model.js";
-
-/** Models sometimes wrap JSON in prose or a code fence. Dig it out. */
-function parseJson(text) {
-  const t = String(text || "").trim();
-  try { return JSON.parse(t); } catch {}
-  const fence = /```(?:json)?\s*([\s\S]*?)```/.exec(t);
-  if (fence) { try { return JSON.parse(fence[1]); } catch {} }
-  const a = t.indexOf("{"), b = t.lastIndexOf("}");
-  if (a >= 0 && b > a) { try { return JSON.parse(t.slice(a, b + 1)); } catch {} }
-  return null;
-}
+import { parseJson } from "../lib/json.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });

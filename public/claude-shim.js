@@ -11,7 +11,8 @@
         DocSnap:   { exists, data(), metadata:{hasPendingWrites} }
         QuerySnap: { docs:[{id, data()}], metadata:{hasPendingWrites} }
      window.claude.use("assets")  -> { upload(file) -> {id, url} }
-     window.claude.use("sample")  -> { limits(), json(prompt, opts) }
+     window.claude.use("sample")  -> { limits(), json(prompt, opts),
+                                       page(prompt, url, opts) }
 
    Two differences from the artifact host, both benign:
    - Snapshot bodies are NOT frozen here, so thaw() is a no-op.
@@ -175,6 +176,15 @@ var SAMPLE = {
         { prompt: prompt, mediaType: m[1], data: m[2] },
         { signal: opts.signal });
     }).then(function(j){ return j.result; });
+  },
+  /* Not an artifact capability: the artifact host never fetched pages.
+     The read itself is server-side, in /api/read-page, which fetches the
+     link and answers with the same JSON a poster read does, plus the URL
+     it landed on after redirects. */
+  page: function(prompt, url, opts){
+    opts = opts || {};
+    return api("/api/read-page", { prompt: prompt, url: url }, { signal: opts.signal })
+      .then(function(j){ return { result: j.result, url: j.url }; });
   }
 };
 
