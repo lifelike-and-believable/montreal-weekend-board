@@ -56,13 +56,15 @@ test("visit works without a taste profile", async () => {
 test("guide: a job adds travel notes; they are read back and survive a sources report", async () => {
   const body = { op: "guide", place: { name: "Brooklyn", region: "NY" },
     areas: [{ name: "Williamsburg", note: "venues, L train" }], transit: ["Subway, tap-to-pay OMNY"],
-    stays: [], tips: ["Many venues are cash-light"] };
+    stays: [], tips: ["Many venues are cash-light"],
+    hoods: [{ name: "Greenpoint", note: "Quiet, Polish bakeries by day. Small rooms for music at night." }] };
   assert.equal((await call("POST", { auth: "owner", body })).code, 401);
   const r = await call("POST", { body });
-  assert.deepEqual(r.body, { ok: true, slug: "new-york-ny", guide: { areas: 1, transit: 1, stays: 0, tips: 1 } });
+  assert.deepEqual(r.body, { ok: true, slug: "new-york-ny", guide: { areas: 1, transit: 1, stays: 0, tips: 1, hoods: 1 } });
   await call("POST", { body: { op: "sources", place: NYC, sources: [{ url: "https://nyc.example.com" }] } });
   const get = await call("GET", { auth: "owner", query: { place: "new-york-ny" } });
   assert.equal(get.body.guide.areas[0].name, "Williamsburg");
+  assert.equal(get.body.guide.hoods[0].name, "Greenpoint");
   assert.equal(get.body.visits.length, 2, "a sources report keeps the visits");
   assert.equal(get.body.sources.length, 1);
   assert.equal((await call("POST", { body: { ...body, areas: "x" } })).body.code, "bad_areas");

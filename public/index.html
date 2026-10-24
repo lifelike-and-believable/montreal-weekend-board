@@ -379,6 +379,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{
 .guide-title{font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;text-transform:uppercase;letter-spacing:.13em;font-size:11px;color:var(--ink-2)}
 .guide-meta{font-size:13px;color:var(--ink-3)}
 .guide-body{padding:2px 14px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:14px 20px}
+.guide-sec.wide{grid-column:1/-1}
+.guide-sec.wide ul{max-width:72ch}
 .guide-sec h3{margin:0 0 6px;font-family:"Archivo",sans-serif;font-variation-settings:"wdth" 80,"wght" 700;text-transform:uppercase;letter-spacing:.11em;font-size:10.5px;color:var(--accent)}
 .guide-sec ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .guide-sec li{font-size:14px;line-height:1.4;color:var(--ink-2);overflow-wrap:break-word}
@@ -1350,7 +1352,7 @@ var AWAY = [];
 var CAL = { busyAt: null, canRefresh: false };   /* when it was read; can the board ask again */
 /* Good sources for the place, in travel mode only: [{name,url,kind}]. */
 var SOURCES = [];
-/* The ledger's guide to that place, read-only: {visits, lastVisitedAt, guide:{areas,transit,stays,tips}, personal}, or null. */
+/* The ledger's guide to that place, read-only: {visits, lastVisitedAt, guide:{areas,transit,stays,tips,hoods}, personal}, or null. */
 var GUIDE = null;
 if (window.__BOARD_DATA__) {
   var BD = window.__BOARD_DATA__;
@@ -1788,15 +1790,16 @@ function sourcesHtml(list, label){
   if (!links.length) return '<span>No listing sources picked for ' + esc(label) + ' yet.</span>';
   return '<span>Sources for ' + esc(label) + ':</span> ' + links.join(" ");
 }
-/* One guide section: a heading and a list of {name?, note} items, or "" when it has none. */
-function guideSectionHtml(label, items){
+/* One guide section: a heading and a list of {name?, note} items, or "" when it has none.
+   A `wide` one runs across the panel, for notes longer than a line. */
+function guideSectionHtml(label, items, wide){
   var rows = (Array.isArray(items) ? items : []).map(function(it){
     if (!it || typeof it !== "object") return "";
     var name = it.name != null ? String(it.name).trim() : "", note = it.note != null ? String(it.note).trim() : "";
     if (!name && !note) return "";
     return "<li>" + (name ? "<b>" + esc(name) + "</b>" + (note ? " \u2014 " : "") : "") + esc(note) + "</li>";
   }).filter(Boolean);
-  return rows.length ? '<div class="guide-sec"><h3>' + esc(label) + "</h3><ul>" + rows.join("") + "</ul></div>" : "";
+  return rows.length ? '<div class="guide-sec' + (wide ? " wide" : "") + '"><h3>' + esc(label) + "</h3><ul>" + rows.join("") + "</ul></div>" : "";
 }
 /* The owner's own earlier picks in this place, as a section. */
 function guidePersonalHtml(list){
@@ -1824,7 +1827,8 @@ function guideMeta(g){
 function guideHtml(g){
   if (!g || typeof g !== "object") return "";
   var gd = g.guide && typeof g.guide === "object" ? g.guide : {};
-  return guideSectionHtml("Where to be", gd.areas) + guideSectionHtml("Getting around", gd.transit) +
+  return guideSectionHtml("Neighbourhoods", gd.hoods, true) +
+    guideSectionHtml("Where to be", gd.areas) + guideSectionHtml("Getting around", gd.transit) +
     guideSectionHtml("Where to stay", gd.stays) + guideSectionHtml("Good to know", gd.tips) +
     guidePersonalHtml(g.personal);
 }

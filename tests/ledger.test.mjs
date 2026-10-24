@@ -60,6 +60,22 @@ test("merging a note with the same name replaces it; remove takes it out", () =>
   assert.deepEqual([g.transit.length, g.areas.length], [0, 1]);
 });
 
+test("a neighbourhood note has room for a couple of sentences; the others stay at one", () => {
+  const long = "x".repeat(500);
+  const g = cleanGuide({ hoods: [{ name: "Greenpoint", note: long }], tips: [long] }, T0);
+  assert.equal(g.hoods[0].note.length, 420);
+  assert.equal(g.tips[0].note.length, 240);
+  const many = Array.from({ length: GUIDE_CAPS.hoods + 3 }, (_, i) => ({ name: `Hood ${i}`, note: "n" }));
+  assert.equal(cleanGuide({ hoods: many }, T0).hoods.length, GUIDE_CAPS.hoods);
+});
+
+test("a neighbourhood note is corrected by name and removed by name, like any other", () => {
+  let g = mergeGuide({}, { hoods: [{ name: "Greenpoint", note: "old" }] }, { now: T0 });
+  g = mergeGuide(g, { hoods: [{ name: "greenpoint", note: "new" }] }, { now: T1 });
+  assert.deepEqual(g.hoods.map((h) => h.note), ["new"]);
+  assert.equal(mergeGuide(g, {}, { remove: { hoods: ["GREENPOINT"] }, now: T1 }).hoods.length, 0);
+});
+
 test("personal notes are the owner's adds and stars for that weekend; a hide never appears", () => {
   const taste = { recent: [
     { title: "Hadestown", cat: "theatre", venue: "Walter Kerr", weekend: "2026-09-12", via: "add", at: T0 },

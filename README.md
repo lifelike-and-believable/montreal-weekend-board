@@ -164,18 +164,22 @@ urls). Errors are `{code,error}` with 400/401/405.
   (`POST /api/trip {op:"visit", place, weekendId, from?, to?}`, which also
   folds the owner's adds and stars for that weekend, read from
   `taste/profile`, into `personal`: title, category, venue, add or star;
-  hides are never recorded). `guide` holds short travel notes in four
-  sections, `areas`, `transit`, `stays` and `tips`
-  (`{op:"guide", place, areas?, transit?, stays?, tips?, remove?}`): a note
+  hides are never recorded). `guide` holds short travel notes in five
+  sections, `areas`, `transit`, `stays`, `tips` and `hoods`
+  (`{op:"guide", place, areas?, transit?, stays?, tips?, hoods?, remove?}`): a note
   with the same name replaces the old one, a section keeps its newest few
-  (12, 8, 8, 12), `remove` takes a note out. `plan` returns `ledger`
+  (12, 8, 8, 12, 8), `remove` takes a note out. `hoods` is a neighbourhood
+  guide: each note is a couple of sentences (up to 420 characters, against
+  240 elsewhere) on a neighbourhood's character and what it has for the
+  owner's interests, read from their adds and stars; never dated events. `plan` returns `ledger`
   (`firstVisit`, `visits`, `firstVisitedAt`, `lastVisitedAt`, `guide`,
   `personal` from earlier trips) for a place, null at home, and
   `GET ?place=<slug>` returns the lot. A first visit is one with no trip on
   an earlier weekend; the routine does a seeding pass on it (sources and a
   guide) and leans on the ledger on a return.
 - On the board, in travel mode only, a folded "Guide to <place>" panel above the
-  footer shows the ledger read-only: the guide's four sections, how often the
+  footer shows the ledger read-only: the neighbourhood guide across the top, the
+  other four sections, how often the
   owner has been before and when last, and up to eight of their own earlier
   picks there. `/board-data.js` carries it as `GUIDE` (names and notes only,
   null when the ledger has nothing yet), and the panel is hidden at home.
