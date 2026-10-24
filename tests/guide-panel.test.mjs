@@ -54,6 +54,16 @@ test("the heading says how often they have been, and when last", () => {
   assert.match(meta({ visits: 5, lastVisitedAt: "junk" }), /^Been here 5 times before$/);
 });
 
+test("the neighbourhood guide comes first and runs across the panel", () => {
+  const g = { guide: { ...G.guide, hoods: [{ name: "Greenpoint", note: "Quiet and Polish by day. Good for small venues." }] } };
+  const h = body(g);
+  assert.ok(h.indexOf("Neighbourhoods") < h.indexOf("Where to be"), "before the other sections");
+  assert.match(h, /<div class="guide-sec wide"><h3>Neighbourhoods<\/h3>/);
+  assert.match(h, /<b>Greenpoint<\/b> — Quiet and Polish by day\. Good for small venues\./);
+  assert.match(section("Where to be", G.guide.areas), /<div class="guide-sec"><h3>/, "the others stay in the grid");
+  assert.ok(!body(G).includes("Neighbourhoods"), "and it is left out when the routine has not written one");
+});
+
 test("the body is every section with something in it, and empty when there is nothing", () => {
   const h = body(G);
   for (const t of ["Where to be", "Getting around", "Good to know", "From your earlier trips"]) assert.ok(h.includes(t), t);
@@ -100,5 +110,5 @@ test("boardGuide gives names and notes only, and null when there is nothing", ()
   assert.equal(g.lastVisitedAt, "2026-09-13");
   assert.deepEqual(g.guide.areas, [{ name: "Chelsea", note: "galleries" }]);
   assert.deepEqual(g.personal, [{ title: "Hadestown", venue: "Walter Kerr", via: "star" }]);
-  assert.deepEqual(Object.keys(g.guide).sort(), ["areas", "stays", "tips", "transit"]);
+  assert.deepEqual(Object.keys(g.guide).sort(), ["areas", "hoods", "stays", "tips", "transit"]);
 });

@@ -26,7 +26,7 @@ import { summarize, cleanGuide, GUIDE_SECTIONS } from "../lib/ledger.js";
      POST {op:"visit", place, weekendId, from?, to?}
                              job            record the trip, and fold what the owner
                                             added or starred for it into the place's notes
-     POST {op:"guide", place, areas?, transit?, stays?, tips?, remove?}
+     POST {op:"guide", place, areas?, transit?, stays?, tips?, hoods?, remove?}
                              job            add travel notes to the place's guide
 
    A place is filed under one name however it is written: "NYC", "New York"
