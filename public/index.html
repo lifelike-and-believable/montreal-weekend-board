@@ -2907,6 +2907,36 @@ function gapHtml(g, rel){
   return calm(fmtGap(g) + ' free' + (where ? ' · ' + esc(where) : ''));
 }
 
+/* The line between two picks that overlap, `a` starting first. Two
+   things with a curtain can't share the time, but a drop-in (a market, a
+   festival site) is only a window: half an hour of it either side of the
+   other pick is still a visit, and the line says how much is left. */
+function overlapHtml(a, aAt, b, bAt){
+  var aEnd = aAt + (a.dur || 120), bEnd = bAt + (b.dur || 120);
+  var da = isDropIn(a), db = isDropIn(b);
+  if (da && db) {
+    return '<div class="gap"><span></span><span>' + esc(a.title) + ' and ' + esc(b.title) +
+      ' are both drop-in — time to see each</span></div>';
+  }
+  if (da || db) {
+    var d = da ? a : b, dAt = da ? aAt : bAt, dEnd = da ? aEnd : bEnd;
+    var s = da ? b : a, sAt = da ? bAt : aAt, sEnd = da ? bEnd : aEnd;
+    var before = Math.max(0, Math.min(dEnd, sAt) - dAt);
+    var after = Math.max(0, dEnd - Math.max(dAt, sEnd));
+    var parts = [];
+    if (before >= 30) parts.push(fmtGap(before) + ' before ' + esc(s.title));
+    if (after >= 30) parts.push(fmtGap(after) + ' after ' + (parts.length ? 'it' : esc(s.title)));
+    if (parts.length) {
+      var shut = dEnd % 1440;
+      return '<div class="gap"><span></span><span>' + esc(d.title) + ' is drop-in until ' +
+        esc(fmtClock(pad(Math.floor(shut / 60)) + ':' + pad(shut % 60))) + ' — ' + parts.join(', ') +
+        '</span></div>';
+    }
+  }
+  return '<div class="gap clash"><span></span><span>⚠ ' + esc(a.title) +
+    ' runs about ' + (aEnd - bAt) + ' min into ' + esc(b.title) + ' — one of these has to go</span></div>';
+}
+
 function renderPlan(){
   var p = planRows();
   var n = planCount(p);
@@ -2954,9 +2984,7 @@ function renderPlan(){
       if (hitPick) {
         /* the note sits between the two rows, so it names both rather than
            reading as if the row above overlaps itself */
-        html += '<div class="gap clash"><span></span><span>⚠ ' + esc(lastPick.r.item.title) +
-                ' runs about ' + (lastPick.at + (lastPick.r.item.dur || 120) - x.at) + ' min into ' +
-                esc(x.r.item.title) + ' — one of these has to go</span></div>';
+        html += overlapHtml(lastPick.r.item, lastPick.at, x.r.item, x.at);
       } else if (prev && prev.at != null && x.at != null) {
         /* no gap is worked out across another clock or an away stretch */
         var odd = function(y){ return y.b && (y.b.zone || y.b.away); };
