@@ -11,7 +11,7 @@ const fmtClock = build("fmtClock", { fmt });
 const fmtGap = build("fmtGap");
 const pad = build("pad");
 const isDropIn = build("isDropIn");
-const overlapHtml = build("overlapHtml", { esc, fmtClock, fmtGap, pad, isDropIn });
+const overlapHtml = build("overlapHtml", { esc, fmtClock, fmtGap, pad, isDropIn, DROP_IN_VISIT: 30 });
 
 const text = (h) => h.replace(/<[^>]+>/g, "");
 const market = { title: "Found Fall Vintage Market", cat: "market", dur: 300 };

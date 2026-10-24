@@ -2036,13 +2036,29 @@ function chipOccasion(d){
 }
 function clashesAt(e, t){
   if (!e || !e.day) return [];
-  return blockingVisible(e.day).filter(function(b){
+  var st = t ? mins(t) : 0, en = st + (e.dur || 120);
+  var hits = blockingVisible(e.day).filter(function(b){
     if (b.zone) return false;
     if (b.allDay) return true;
     if (!t) return false;
-    var st = mins(t), en = st + (e.dur || 120);
     return st < busyEnd(b) && busyStart(b) < en;
   });
+  /* a drop-in is only a window: your calendar takes a bite out of it,
+     and it is caught only when no visit's worth is left */
+  if (t && hits.length && isDropIn(e) &&
+      !hits.some(function(b){ return b.allDay; }) &&
+      freeStretch(st, en, hits) >= DROP_IN_VISIT) return [];
+  return hits;
+}
+/* The longest stretch of [st, en] that none of `list` covers, in minutes. */
+function freeStretch(st, en, list){
+  var best = 0, cur = st;
+  list.slice().sort(function(a, c){ return busyStart(a) - busyStart(c); }).forEach(function(b){
+    var s = Math.max(busyStart(b), st);
+    if (s > cur) best = Math.max(best, s - cur);
+    cur = Math.max(cur, busyEnd(b));
+  });
+  return Math.max(best, en - cur);
 }
 /* The one a line should name when a showing runs into several: being
    away outranks everything, then a timed entry (the specific reason),
@@ -2752,6 +2768,8 @@ function nowMins(){
   return mins(new Date().toLocaleTimeString("en-GB",
     { timeZone:"America/Toronto", hour:"2-digit", minute:"2-digit" }));
 }
+/* The least of a drop-in's window that still makes a visit, in minutes. */
+var DROP_IN_VISIT = 30;
 /* A scheduled thing has a curtain: miss the start and you have missed it —
    films, plays, dance, a gig with a support act. A drop-in runs a window you
    can walk into — a market, a festival site, a day party, the drum circle.
@@ -2924,8 +2942,8 @@ function overlapHtml(a, aAt, b, bAt){
     var before = Math.max(0, Math.min(dEnd, sAt) - dAt);
     var after = Math.max(0, dEnd - Math.max(dAt, sEnd));
     var parts = [];
-    if (before >= 30) parts.push(fmtGap(before) + ' before ' + esc(s.title));
-    if (after >= 30) parts.push(fmtGap(after) + ' after ' + (parts.length ? 'it' : esc(s.title)));
+    if (before >= DROP_IN_VISIT) parts.push(fmtGap(before) + ' before ' + esc(s.title));
+    if (after >= DROP_IN_VISIT) parts.push(fmtGap(after) + ' after ' + (parts.length ? 'it' : esc(s.title)));
     if (parts.length) {
       var shut = dEnd % 1440;
       return '<div class="gap"><span></span><span>' + esc(d.title) + ' is drop-in until ' +
