@@ -12,13 +12,19 @@ const keysMatch = build("keysMatch");
 const busyStart = build("busyStart", { mins });
 const busyEnd = build("busyEnd", { mins });
 const busyEcho = build("busyEcho", { titleKey, keysMatch });
+const isDropIn = build("isDropIn");
 
 const B = (o) => ({ id: "x~sat", day: "sat", allDay: false, title: "Dentist", where: "", ...o });
 
 function clashes(busy) {
   const calendarVisible = (dk) => busy.filter((b) => b.day === dk);
   const blockingVisible = build("blockingVisible", { calendarVisible });
-  return build("clashesAt", { blockingVisible, mins, busyStart, busyEnd });
+  const freeStretch = build("freeStretch", { busyStart, busyEnd });
+  const fn = build("clashesAt",
+    { blockingVisible, mins, busyStart, busyEnd, isDropIn, freeStretch, DROP_IN_VISIT: 30 });
+  /* a listing is a film unless a test says otherwise: a showing has a
+     curtain, so what overlaps it at all catches it */
+  return (e, t) => fn(e && { cat: "film", ...e }, t);
 }
 
 test("a showing runs into what overlaps it, for its length", () => {
@@ -70,6 +76,29 @@ test("being away catches what falls inside it, in Montreal time", () => {
   assert.equal(at({ day: "sat", dur: 60 }, "06:00").length, 0, "before you leave");
   assert.equal(at({ day: "sat", dur: 120 }, "06:30").length, 1, "running into the departure");
   assert.equal(at({ day: "sat", dur: 90 }, "19:30").length, 1);
+});
+
+test("a calendar entry inside a market's hours leaves the market open to you", () => {
+  const market = { day: "sat", cat: "market", dur: 300 };
+  const lunch = clashes([B({ from: "13:00", to: "14:00", title: "Lunch" })]);
+  assert.equal(lunch(market, "12:00").length, 0, "an hour before lunch, three after");
+
+  const tight = clashes([B({ from: "12:20", to: "16:40" })]);
+  assert.equal(tight(market, "12:00").length, 1, "20 min either side is not a visit");
+
+  const two = clashes([B({ from: "12:00", to: "14:20" }), B({ id: "y~sat", from: "14:40", to: "17:00" })]);
+  assert.equal(two(market, "12:00").length, 2, "the gaps between entries count, not their sum");
+
+  const allDay = clashes([B({ allDay: true, from: null, to: null, title: "Trip" })]);
+  assert.equal(allDay(market, "12:00").length, 1, "an all-day entry still catches it");
+
+  const away = clashes([B({ away: true, from: "11:00", to: "24:00", title: "Out of town" })]);
+  assert.equal(away(market, "12:00").length, 1, "nor does being away for all of it");
+});
+
+test("a calendar entry still catches a show for any overlap", () => {
+  const lunch = clashes([B({ from: "13:00", to: "14:00", title: "Lunch" })]);
+  assert.equal(lunch({ day: "sat", cat: "theatre", dur: 300 }, "12:00").length, 1);
 });
 
 const fmt = build("fmt");
