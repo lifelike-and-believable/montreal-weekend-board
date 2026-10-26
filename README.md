@@ -69,7 +69,10 @@ belongs, not because it has to:
     lib/metro.js               station -> line, verified, ASCII-keyed
     lib/plan.js                which days to plan (weekend + days off) and
                                where the owner is; pure, no I/O
-    lib/sources.js             per-place list of good listing sources
+    lib/sources.js             per-place list of good listing sources,
+                               Montreal included
+    lib/home-sources.js        the Montreal list's seed, read until
+                               sources/montreal is first written
     api/trip.js                the routine's endpoint: plan the week,
                                keep a place's sources
     tests/                     node --test; `npm test` runs them all
@@ -78,7 +81,8 @@ belongs, not because it has to:
 
 A Google Calendar day off in the coming week is planned like a weekend day.
 And when the calendar shows the days are spent somewhere else, the listings
-are for there, with a running list of good sources for that place.
+are for there, with a running list of good sources for that place. Montreal
+keeps its list the same way.
 
 **The routine that reads Google Calendar and writes the listings lives
 outside this repo and must be updated by the owner.** This repo only stores
@@ -99,8 +103,9 @@ follows the checklist below.
 - `place` is only present in travel mode:
   `{ name, region?, country?, slug, lat?, lon?, tz? }`. Absent means home
   (Montreal). `/board-data.js` also carries `SOURCES`: up to 8
-  `[{name,url,kind}]` for `WEEKEND.place.slug` (empty at home, and empty if
-  the sources cannot be read).
+  `[{name,url,kind}]` for `WEEKEND.place.slug`, or for Montreal at home
+  (empty if the sources cannot be read, when the footer keeps the links
+  the page shipped with).
 - In travel mode `/api/refresh` stores `AWAY` empty (the listings are for
   where the owner is, so "away from Montreal" must not dim them) and keeps
   `BUSY`.
@@ -108,16 +113,22 @@ follows the checklist below.
 ### Endpoints (`api/trip.js`, owner or refresh-job auth)
 
     GET  /api/trip                    places with a list: [{slug,name,count,updatedAt}]
-    GET  /api/trip?place=<slug>       { place, updatedAt, sources } best first, dead flagged
+    GET  /api/trip?place=<slug>       { place, updatedAt, sources } best first, dead flagged;
+                                      `home` or `montreal` is the Montreal list
     POST /api/trip {op:"plan", events, away, today?}
                                       the plan (days, label, dayOffs, place,
                                       placeSource, weekend) plus `sources`
-                                      for the place; `today` is YYYY-MM-DD,
-                                      default the current Montreal date
-    POST /api/trip {op:"sources", place:{name,region,country},
-                    sources:[{url,name,kind,covers,note}], used:[url], dead:[url]}
-                                      refresh job only; merges and stores,
-                                      returns {slug,count,added,used,dead}
+                                      for the place (all of Montreal's at
+                                      home, the best 20 away); `today` is
+                                      YYYY-MM-DD, default the current
+                                      Montreal date
+    POST /api/trip {op:"sources", place:{name,region,country} | "home",
+                    sources:[{url,name,kind,covers,note}], used:[url], dead:[url],
+                    pin?, unpin?, require?, unrequire?, remove?}
+                                      owner or refresh job; merges and stores,
+                                      returns {slug,count,added,used,dead,pinned}.
+                                      The five edit lists (urls) are the
+                                      owner's only
     POST /api/trip {op:"alias", alias, place}
                                       refresh job only; files another name
                                       under that place's list
@@ -185,10 +196,22 @@ urls). Errors are `{code,error}` with 400/401/405.
   null when the ledger has nothing yet), and the panel is hidden at home.
   Notes are corrected through the routine (`remove`), not from the board.
 - Sources: per place at `sources/<slug>`; https only, urls normalised
-  (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40 per
-  place. Rank is `uses - 2*misses`; a source with 3+ misses and more misses
-  than uses sinks and is flagged `status:"dead"`. Over the cap the lowest
-  score is dropped, never a used source while an unused one exists.
+  (lowercase host, no hash, no `utm_*`, no trailing slash); at most 40
+  unpinned per place. Rank is pinned first, then `uses - 2*misses`; an
+  unpinned source with 3+ misses and more misses than uses sinks and is
+  flagged `status:"dead"`. Over the cap the lowest score is dropped, never
+  a used source while an unused one exists.
+- Pins: the owner pins a source (`pin:[url]`, up to 60 a place) and it is
+  never dropped or flagged dead, and does not count against the cap; its
+  misses are still counted, so a broken one shows. `required` marks a source
+  an update run must fetch. What the refresh job sends never sets either.
+- Montreal is `sources/montreal`. Until it is first written it reads as
+  the seed in `lib/home-sources.js` (every entry pinned, the update-run
+  ones required, out-of-town ones covering `afield`); the first write
+  stores the seed with it, and editing the seed after that changes nothing.
+  To add a Montreal source, sign in and
+  `POST /api/trip {op:"sources", place:"home", sources:[{url,name,kind,note}],
+  pin:[url], require:[url]}` (drop `require` unless update runs must fetch it).
 
 ### What the external routine must now do
 
@@ -197,10 +220,12 @@ urls). Errors are `{code,error}` with 400/401/405.
    `away` as `{start,end,where}` for flights, hotels and trips).
 2. Generate listings for every day in the returned `days` (day-off days get
    the same treatment as weekend days) and, if `place` is set, for that place
-   rather than Montreal. In travel mode search the returned `sources` first,
-   then discover and vet new ones.
+   rather than Montreal. Search the returned `sources` first (at home, the
+   Montreal list; update runs fetch every `required` one), then discover
+   and vet new ones.
 3. `POST /api/trip {op:"sources", place, sources, used, dead}` with the new
-   good sources and the urls that worked (`used`) or failed (`dead`).
+   good sources and the urls that worked (`used`) or failed (`dead`);
+   `place` is `"home"` at home.
 4. `POST /api/refresh` as before, with `WEEKEND` set to the plan's
    `weekend` plus `updated` (ISO timestamp), and the usual blocks and `BUSY`.
 
