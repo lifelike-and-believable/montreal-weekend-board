@@ -109,6 +109,7 @@ The sources (the project doc `montreal-cultural-resources.md` has the full list 
 - casadelpopolo.com/en, barleritzpdb.com, theatrerialto.ca — small rooms
 - mtl.org/en/experience/things-to-do-september (swap the month) and quartierdesspectacles.com/en/festivals-and-events — festivals
 - oldportofmontreal.com/events and marchespublics-mtl.com/en/events — Old Port and the public markets
+- lamppostsocial.com/events/city/montreal (and /live-music/city/montreal) — community and small-venue listings: comedy nights, local gigs, pop-ups
 - lavitrine.com/en and timeout.com/montreal — cross-checks
 For the out-of-town section: sepaq.com, quebecvacances.com/en/events, easterntownships.org, bonjourquebec.com, laurentides.com/en/events, upa.qc.ca (farm open days), exo.quebec and Navette Nature for car-free trips, and tourism sites for the Laurentians, Montérégie, Eastern Townships, Lanaudière and Quebec City.
 
