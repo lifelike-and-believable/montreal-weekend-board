@@ -11,8 +11,8 @@ mock.module(url("lib/store.js"), {
   }
 });
 
-const { normalizeUrl, cleanSource, mergeSources, rankSources, getSources, saveSources, MAX_PER_PLACE } =
-  await import(url("lib/sources.js"));
+const { normalizeUrl, cleanSource, mergeSources, rankSources, getSources, saveSources, homePlace,
+  MAX_PER_PLACE, MAX_PINNED, HOME_SLUG } = await import(url("lib/sources.js"));
 
 const NOW = "2026-09-10T12:00:00.000Z";
 const src = (host, extra) => ({ url: `https://${host}/`, name: host, ...extra });
@@ -93,14 +93,61 @@ test("getSources and saveSources round-trip through the store", async () => {
   assert.equal(await getSources("boston-ma"), null);
   assert.equal(await getSources("../etc"), null);
   const r = await saveSources({ name: "Boston", region: "MA", country: "USA" }, { sources: [src("a.com"), src("b.com")], now: NOW });
-  assert.deepEqual(r, { slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0 });
+  assert.deepEqual(r, { slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0, pinned: 0 });
   const r2 = await saveSources({ name: "Boston", region: "MA", country: "USA" },
     { sources: [src("c.com")], used: ["https://a.com"], dead: ["https://b.com", "https://zzz.com"], now: "2026-09-12T00:00:00Z" });
-  assert.deepEqual(r2, { slug: "boston-ma", count: 3, added: 1, used: 1, dead: 1 });
+  assert.deepEqual(r2, { slug: "boston-ma", count: 3, added: 1, used: 1, dead: 1, pinned: 0 });
   const doc = DOCS.get("sources/boston-ma");
   assert.deepEqual(doc.place, { name: "Boston", region: "MA", country: "USA" });
   assert.equal(doc.createdAt, NOW);
   assert.equal(doc.updatedAt, "2026-09-12T00:00:00Z");
   assert.equal(doc.sources[0].name, "a.com", "best first");
-  await assert.rejects(saveSources({ name: "Montreal" }, {}));
+  await assert.rejects(saveSources({ name: "" }, {}));
+});
+
+test("a pinned source is never dead and never evicted, but its misses still count", () => {
+  const pinned = { ...cleanSource(src("pin.com"), NOW), pinned: true };
+  let list = mergeSources([pinned], [], { dead: ["https://pin.com", "https://pin.com", "https://pin.com"], now: NOW });
+  assert.equal(list[0].misses, 3);
+  assert.equal(rankSources(list)[0].status, undefined);
+  list = mergeSources(list, Array.from({ length: MAX_PER_PLACE + 5 }, (_, i) => src(`s${i}.com`)), { now: NOW });
+  assert.equal(list.length, MAX_PER_PLACE + 1, "the cap counts only unpinned sources");
+  assert.equal(list[0].url, "https://pin.com", "pinned ranks first");
+});
+
+test("what a run sends never pins or requires; the owner's edits do", () => {
+  let list = mergeSources([], [src("a.com", { pinned: true, required: true }), src("b.com")], { now: NOW });
+  assert.ok(list.every((s) => !("pinned" in s) && !("required" in s)));
+  list = mergeSources(list, [src("c.com")], { pin: ["https://a.com/", "https://c.com"], require: ["https://a.com"], now: NOW });
+  const by = (l) => Object.fromEntries(l.map((s) => [s.name, s]));
+  assert.deepEqual([by(list)["a.com"].pinned, by(list)["a.com"].required, by(list)["c.com"].pinned], [true, true, true]);
+  list = mergeSources(list, [src("a.com", { pinned: false })], { now: NOW });
+  assert.equal(by(list)["a.com"].pinned, true, "a run cannot unpin either");
+  list = mergeSources(list, [], { unpin: ["https://a.com"], unrequire: ["https://a.com"], remove: ["https://b.com"], now: NOW });
+  assert.ok(!("pinned" in by(list)["a.com"]) && !("required" in by(list)["a.com"]));
+  assert.deepEqual(list.map((s) => s.name).sort(), ["a.com", "c.com"]);
+  const full = Array.from({ length: MAX_PINNED + 2 }, (_, i) => src(`p${i}.com`));
+  const pins = mergeSources([], full, { pin: full.map((s) => s.url), now: NOW });
+  assert.equal(pins.filter((s) => s.pinned).length, MAX_PINNED);
+});
+
+test("home: Montreal is filed as sources/montreal, read as its seed until written", async () => {
+  DOCS.clear();
+  assert.equal(homePlace("home").slug, HOME_SLUG);
+  assert.equal(homePlace({ name: "Montréal" }).slug, HOME_SLUG);
+  assert.equal(homePlace({ name: "Boston" }), null);
+  const { cleanPlace } = await import(url("lib/plan.js"));
+  assert.notEqual(cleanPlace({ name: "Boston", slug: HOME_SLUG }).slug, HOME_SLUG, "no travel place files over home");
+  const seed = await getSources(HOME_SLUG);
+  assert.equal(seed.place.name, "Montreal");
+  assert.ok(seed.sources.length >= 30 && seed.sources.every((s) => s.pinned));
+  assert.equal(seed.sources.filter((s) => s.required).length, 12);
+  assert.equal(rankSources(seed.sources)[0].name, "Cult MTL", "list order is rank among equals");
+  assert.ok(seed.sources.some((s) => s.covers.includes("afield")));
+  const r = await saveSources("home", { sources: [src("new.com")], used: ["https://cultmtl.com/events/"], now: NOW });
+  assert.deepEqual([r.slug, r.added, r.used, r.pinned], [HOME_SLUG, 1, 1, seed.sources.length]);
+  const doc = DOCS.get("sources/montreal");
+  assert.equal(doc.sources.length, seed.sources.length + 1, "the first write stores the seed with it");
+  assert.equal(doc.sources.find((s) => s.name === "Cult MTL").uses, 1);
+  assert.equal((await getSources(HOME_SLUG)).sources.length, seed.sources.length + 1);
 });

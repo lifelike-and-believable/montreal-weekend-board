@@ -1,5 +1,5 @@
-/* /board-data.js carries SOURCES for the place being visited, and a
-   failure reading them never costs the page its listings. */
+/* /board-data.js carries SOURCES for where the board is, home included,
+   and a failure reading them never costs the page its listings. */
 import { test, mock } from "node:test";
 import assert from "node:assert/strict";
 
@@ -28,9 +28,16 @@ async function load() {
 }
 const src = (i, extra) => ({ url: `https://s${i}.com`, name: "S" + i, kind: "press", covers: [], note: "", addedAt: "2026-01-01T00:00:00Z", lastUsedAt: null, uses: 0, misses: 0, ...extra });
 
-test("at home SOURCES is an empty array", async () => {
+test("at home SOURCES is the top eight of the Montreal list, seeded until it is written", async () => {
   S.board = { WEEKEND: { id: "2026-09-12", days: [] } };
-  assert.deepEqual((await load()).SOURCES, []);
+  const seeded = await load();
+  assert.deepEqual(seeded.SOURCES.map((s) => s.name), ["Cult MTL", "La Vitrine", "Evenko", "Tourisme Montréal",
+    "Quartier des Spectacles", "Old Port", "Time Out", "LampPost Social"]);
+  assert.deepEqual(seeded.SOURCES[0], { name: "Cult MTL", url: "https://cultmtl.com/events", kind: "listings" });
+  assert.equal(seeded.GUIDE, null, "no guide at home");
+  S.sources = { sources: [src(1, { pinned: true, uses: 3 }), src(2, { misses: 5 })] };
+  assert.deepEqual((await load()).SOURCES.map((s) => s.name), ["S1"], "the stored list, dead left out");
+  S.sources = null;
 });
 
 test("away, SOURCES is the top eight live sources as name/url/kind", async () => {

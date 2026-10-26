@@ -52,12 +52,17 @@ test("plan returns the days, the place and that place's sources", async () => {
   assert.deepEqual(r.body.sources.map((s) => s.url).sort(), ["https://a.com", "https://b.com"]);
 });
 
-test("the owner may plan too, today defaults, and home has no sources", async () => {
+test("the owner may plan too, today defaults, and home gets the whole Montreal list", async () => {
+  DOCS.clear();
   const r = await call("POST", { auth: "owner", body: { op: "plan", events: [] } });
   assert.equal(r.code, 200);
   assert.match(r.body.today, /^\d{4}-\d{2}-\d{2}$/);
-  assert.deepEqual(r.body.sources, []);
   assert.equal(r.body.place, null);
+  assert.equal(r.body.ledger, null);
+  assert.ok(r.body.sources.length >= 30);
+  assert.deepEqual(Object.keys(r.body.sources[0]).sort(),
+    ["covers", "kind", "misses", "name", "note", "pinned", "required", "url", "uses"]);
+  assert.deepEqual([r.body.sources[0].name, r.body.sources[0].pinned, r.body.sources[0].required], ["Cult MTL", true, true]);
 });
 
 test("a source-store failure does not cost the plan", async () => {
@@ -83,18 +88,41 @@ test("plan validates its body", async () => {
   await bad({ op: "nope" }, "bad_op");
 });
 
-test("sources is for the job only, and validates", async () => {
+test("sources validates, and only the owner pins, requires or removes", async () => {
+  DOCS.clear();
   const body = { op: "sources", place: BOSTON, sources: [] };
-  assert.equal((await call("POST", { auth: "owner", body })).code, 401);
-  assert.equal((await call("POST", { body: { ...body, place: { name: "Montreal" } } })).body.code, "bad_place");
+  assert.equal((await call("POST", { auth: "owner", body })).code, 200);
+  assert.equal((await call("POST", { body: { ...body, place: { name: "" } } })).body.code, "bad_place");
   assert.equal((await call("POST", { body: { ...body, sources: "x" } })).body.code, "bad_sources");
   assert.equal((await call("POST", { body: { ...body, used: Array(101).fill("https://a.com") } })).body.code, "bad_used");
+  for (const k of ["pin", "unpin", "require", "unrequire", "remove"]) {
+    assert.equal((await call("POST", { body: { ...body, [k]: [] } })).code, 401, k);
+  }
+  assert.equal((await call("POST", { auth: "owner", body: { ...body, pin: "x" } })).body.code, "bad_pin");
+});
+
+test("home: the job reports on the Montreal list; the owner adds, pins and requires", async () => {
+  DOCS.clear();
+  const job = await call("POST", { body: { op: "sources", place: { name: "Montreal" },
+    sources: [{ url: "https://found.ca", name: "Found" }], used: ["https://cultmtl.com/events"], dead: ["https://www.sepaq.com"] } });
+  assert.equal(job.code, 200);
+  assert.deepEqual([job.body.slug, job.body.added, job.body.used, job.body.dead], ["montreal", 1, 1, 1]);
+  const own = await call("POST", { auth: "owner", body: { op: "sources", place: "home",
+    sources: [{ url: "https://new.ca/events", name: "New", kind: "listings" }],
+    pin: ["https://new.ca/events"], require: ["https://new.ca/events"], remove: ["https://found.ca"] } });
+  assert.equal(own.code, 200);
+  const get = await call("GET", { query: { place: "home" } });
+  const by = Object.fromEntries(get.body.sources.map((s) => [s.url, s]));
+  assert.deepEqual([by["https://new.ca/events"].pinned, by["https://new.ca/events"].required], [true, true]);
+  assert.ok(!by["https://found.ca"]);
+  assert.equal(by["https://www.sepaq.com"].misses, 1);
+  assert.equal((await call("GET", { query: { place: "montreal" } })).body.sources.length, get.body.sources.length);
 });
 
 test("sources merges, counts, and is read back ranked", async () => {
   DOCS.clear();
   const r1 = await call("POST", { body: { op: "sources", place: BOSTON, sources: [{ url: "https://a.com" }, { url: "https://b.com" }] } });
-  assert.deepEqual(r1.body, { ok: true, slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0 });
+  assert.deepEqual(r1.body, { ok: true, slug: "boston-ma", count: 2, added: 2, used: 0, dead: 0, pinned: 0 });
   const r2 = await call("POST", { body: { op: "sources", place: BOSTON, sources: [], used: ["https://b.com"], dead: ["https://a.com"] } });
   assert.equal(r2.body.used, 1);
   const get = await call("GET", { auth: "owner", query: { place: "boston-ma" } });

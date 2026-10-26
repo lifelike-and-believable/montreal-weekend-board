@@ -1781,15 +1781,23 @@ function safeHttpUrl(u){
   } catch(e) { return ""; }
 }
 /* The footer's links for the place, or a short muted line when there are none. */
-function sourcesHtml(list, label){
-  var links = (Array.isArray(list) ? list : []).slice(0, 8).map(function(s){
+function sourceLinks(list){
+  return (Array.isArray(list) ? list : []).slice(0, 8).map(function(s){
     var href = s && safeHttpUrl(s.url);
     if (!href) return "";
     var name = s.name != null && String(s.name).trim() ? String(s.name).trim() : new URL(href).hostname;
     return '<a href="' + esc(href) + '" target="_blank" rel="noopener">' + esc(name) + '</a>';
   }).filter(Boolean);
+}
+function sourcesHtml(list, label){
+  var links = sourceLinks(list);
   if (!links.length) return '<span>No listing sources picked for ' + esc(label) + ' yet.</span>';
   return '<span>Sources for ' + esc(label) + ':</span> ' + links.join(" ");
+}
+/* At home: the stored Montreal list, or "" to keep the links the page shipped with. */
+function homeSourcesHtml(list){
+  var links = sourceLinks(list);
+  return links.length ? '<span>Sources:</span> ' + links.join(" ") : "";
 }
 /* One guide section: a heading and a list of {name?, note} items, or "" when it has none.
    A `wide` one runs across the panel, for notes longer than a line. */
@@ -1843,10 +1851,15 @@ function applyGuide(){
   document.getElementById("guide-body").innerHTML = html;
   box.hidden = false;
 }
-/* Away from home: the kicker, title, dateline and footer say so. */
+/* Away from home: the kicker, title, dateline and footer say so. At home, only the footer
+   changes, to the stored Montreal list. */
 function applyPlace(){
   var l = placeLabel();
-  if (!l) return;
+  if (!l) {
+    var home = homeSourcesHtml(SOURCES), hs = document.getElementById("foot-sources");
+    if (home && hs) hs.innerHTML = home;
+    return;
+  }
   var k = document.getElementById("kicker");
   if (k) k.textContent = kickerText();
   document.title = titleText();

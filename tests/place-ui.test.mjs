@@ -68,7 +68,7 @@ test("a day off gets a worded flag; a weekend day gets none", () => {
 
 test("footer sources: links only for http(s), everything escaped", () => {
   const safeHttpUrl = build("safeHttpUrl");
-  const sourcesHtml = build("sourcesHtml", { esc, safeHttpUrl });
+  const sourcesHtml = build("sourcesHtml", { sourceLinks: build("sourceLinks", { esc, safeHttpUrl }), esc });
   const out = sourcesHtml([
     { name: "Boston <b>Globe</b>", url: "https://www.bostonglobe.com/a?x=1&y=2", kind: "news" },
     { name: "evil", url: "javascript:alert(1)" },
@@ -88,18 +88,27 @@ test("footer sources: links only for http(s), everything escaped", () => {
 });
 
 test("footer sources: a quote in a URL cannot break out of the href", () => {
-  const sourcesHtml = build("sourcesHtml", { esc, safeHttpUrl: build("safeHttpUrl") });
+  const sourcesHtml = build("sourcesHtml", { sourceLinks: linksOf(), esc });
   const out = sourcesHtml([{ name: "q", url: 'https://ex.com/a"onmouseover="x' }], "Boston");
   assert.ok(!out.includes('"onmouseover'), out);
 });
 
+const linksOf = () => build("sourceLinks", { esc, safeHttpUrl: build("safeHttpUrl") });
+
 test("footer sources: at most eight, and a quiet line when there are none", () => {
-  const sourcesHtml = build("sourcesHtml", { esc, safeHttpUrl: build("safeHttpUrl") });
+  const sourcesHtml = build("sourcesHtml", { sourceLinks: linksOf(), esc });
   const many = Array.from({ length: 12 }, (_, i) => ({ name: "S" + i, url: "https://s" + i + ".test/" }));
   assert.equal((sourcesHtml(many, "Boston").match(/<a /g) || []).length, 8);
   for (const none of [[], undefined, [{ name: "x", url: "javascript:1" }]]) {
     assert.equal(sourcesHtml(none, "Boston"), "<span>No listing sources picked for Boston yet.</span>");
   }
+});
+
+test("at home the footer takes the stored Montreal list, or keeps the links it shipped with", () => {
+  const homeSourcesHtml = build("homeSourcesHtml", { sourceLinks: linksOf() });
+  const out = homeSourcesHtml([{ name: "Cult MTL", url: "https://cultmtl.com/events" }, { name: "x", url: "javascript:1" }]);
+  assert.equal(out, '<span>Sources:</span> <a href="https://cultmtl.com/events" target="_blank" rel="noopener">Cult MTL</a>');
+  for (const none of [[], undefined, [{ name: "x", url: "javascript:1" }]]) assert.equal(homeSourcesHtml(none), "");
 });
 
 test("the footer keeps its hooks and the home links", () => {

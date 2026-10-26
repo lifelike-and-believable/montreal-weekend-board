@@ -3,7 +3,8 @@ import { listDocs } from "../lib/store.js";
 import { toLocal } from "../lib/busy.js";
 import { planWeek, cleanPlace } from "../lib/plan.js";
 import {
-  getSources, saveSources, rankSources, resolvePlace, resolveSlug, addAlias, recordVisit, saveGuide
+  getSources, saveSources, rankSources, resolvePlace, resolveSlug, addAlias, recordVisit, saveGuide,
+  homePlace, HOME_SLUG
 } from "../lib/sources.js";
 import { summarize, cleanGuide, GUIDE_SECTIONS } from "../lib/ledger.js";
 
@@ -11,16 +12,20 @@ import { summarize, cleanGuide, GUIDE_SECTIONS } from "../lib/ledger.js";
 
    The routine reads Google Calendar, which this app cannot, so it sends
    the week's raw events here and gets back which days to plan (the
-   weekend, plus any day off) and where the owner will be. For somewhere
-   other than Montreal, it also gets that place's list of good sources,
-   and reports back which worked and which did not.
+   weekend, plus any day off) and where the owner will be. It also gets
+   the list of good sources for that place, Montreal included, and reports
+   back which worked and which did not.
 
-     GET ?place=<slug>       owner or job   a place's sources, best first
+     GET ?place=<slug>       owner or job   a place's sources, best first ("montreal" is home)
      GET                     owner or job   the places with a list: slug, name, count
      POST {op:"plan", events, away, today?}
                              owner or job   planWeek(), plus the sources for its place
      POST {op:"sources", place, sources, used, dead}
-                             job            merge into the place's list
+                             owner or job   merge into the place's list; place "home"
+                                            (or Montreal) is the home list
+     POST {op:"sources", place, pin?, unpin?, require?, unrequire?, remove?}
+                             owner          the owner's edits, lists of urls; may ride
+                                            along with sources, used and dead
      POST {op:"alias", alias, place}
                              job            file another name under a place's list
      POST {op:"visit", place, weekendId, from?, to?}
@@ -49,6 +54,9 @@ function live(doc, n) {
   return rankSources((doc && doc.sources) || []).filter((s) => s.status !== "dead").slice(0, n);
 }
 
+/* only the owner pins, requires or removes */
+const OWNER_EDITS = ["pin", "unpin", "require", "unrequire", "remove"];
+
 export default async function handler(req, res) {
   const owner = isAuthed(req), job = isRefreshJob(req);
   if (!owner && !job) return res.status(401).json({ code: "permission_denied", error: "not signed in" });
@@ -57,7 +65,8 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const asked = req.query && req.query.place;
       if (asked) {
-        const doc = await getSources(await resolveSlug(String(asked)));
+        const slug = asked === "home" ? HOME_SLUG : await resolveSlug(String(asked));
+        const doc = await getSources(slug);
         return res.status(200).json({
           place: (doc && doc.place) || null,
           updatedAt: (doc && doc.updatedAt) || null,
@@ -97,30 +106,35 @@ export default async function handler(req, res) {
       let sources = [], ledger = null;
       if (plan.place) {
         try {
-          const home = await resolvePlace(plan.place);
-          if (home) { plan.place = home; plan.weekend.place = home; }
+          const filed = await resolvePlace(plan.place);
+          if (filed) { plan.place = filed; plan.weekend.place = filed; }
         } catch (e) { console.error("[trip] alias", e); }
-        try {
-          const doc = await getSources(plan.place.slug);
-          sources = live(doc, 20).map(({ url, name, kind, covers, note, uses }) =>
-            ({ url, name, kind, covers, note, uses }));
-          ledger = summarize(doc, plan.weekendId);
-        } catch (e) { console.error("[trip] sources", e); }
       }
+      try {
+        /* home's list is curated and pinned, so all of it; away, the best twenty */
+        const doc = await getSources(plan.place ? plan.place.slug : HOME_SLUG);
+        sources = live(doc, plan.place ? 20 : 100).map(({ url, name, kind, covers, note, uses, misses, pinned, required }) =>
+          ({ url, name, kind, covers, note, uses, misses, pinned: !!pinned, required: !!required }));
+        if (plan.place) ledger = summarize(doc, plan.weekendId);
+      } catch (e) { console.error("[trip] sources", e); }
       return res.status(200).json({ ...plan, sources, ledger });
     }
 
     if (b.op === "sources") {
-      if (!job) return res.status(401).json({ code: "permission_denied", error: "refresh token required" });
-      const place = cleanPlace(b.place);
-      if (!place) return bad(res, "bad_place", "place needs a name, and cannot be home");
-      const filed = await resolvePlace(place);
-      const lists = [["sources", MAX_SOURCES], ["used", MAX_URLS], ["dead", MAX_URLS]];
+      if (!owner && OWNER_EDITS.some((k) => b[k] != null)) {
+        return res.status(401).json({ code: "permission_denied", error: "only the owner pins, requires or removes" });
+      }
+      const home = homePlace(b.place);
+      const place = home || cleanPlace(b.place);
+      if (!place) return bad(res, "bad_place", "place needs a name, or \"home\"");
+      const filed = home || await resolvePlace(place);
+      const lists = [["sources", MAX_SOURCES], ["used", MAX_URLS], ["dead", MAX_URLS], ...OWNER_EDITS.map((k) => [k, MAX_URLS])];
       for (const [k, max] of lists) {
         const v = b[k] == null ? [] : b[k];
         if (!Array.isArray(v) || v.length > max) return bad(res, "bad_" + k, `${k} must be an array of at most ${max}`);
       }
-      const out = await saveSources(filed, { sources: b.sources || [], used: b.used || [], dead: b.dead || [] });
+      const patch = Object.fromEntries(lists.map(([k]) => [k, b[k] || []]));
+      const out = await saveSources(filed, patch);
       return res.status(200).json({ ok: true, ...out });
     }
 
