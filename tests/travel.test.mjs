@@ -103,6 +103,18 @@ test("back to back is always a warning, but says where when it can", () => {
   assert.match(gapHtml(0, null), /clash/);
 });
 
+test("two drop-ins back to back or close together are never a warning", () => {
+  /* "Dia de los Muertos" 14:00 for five hours, then the parade at 19:00 */
+  const zero = gapHtml(0, null, true);
+  assert.ok(!zero.includes("clash"));
+  assert.match(zero, /back to back — both drop-in, so either can give/);
+  const near = gapHtml(15, travelRel(ISLAND, NDG), true);
+  assert.ok(!near.includes("clash"));
+  assert.match(near, /15 min — both drop-in, so either can give/);
+  assert.match(gapHtml(45, null, true), /45 min free/, "a comfortable gap reads as before");
+  assert.match(gapHtml(0, null, false), /clash/, "with a fixed time on either side it still warns");
+});
+
 test("a comfortable gap stays calm and adds where only when useful", () => {
   assert.match(gapHtml(90, travelRel(MILE_END, PLATEAU)),
     /free · direct on the orange line/);
