@@ -2923,11 +2923,18 @@ function travelRel(a, b){
 }
 
 /* The line between two picks. `tight` decides whether it reads as a
-   warning, and a shared neighbourhood is what can talk it out of one. */
-function gapHtml(g, rel){
+   warning, and a shared neighbourhood is what can talk it out of one.
+   `loose` is two drop-ins: leave one early or join the other late, so a
+   short gap is never a warning between them. */
+function gapHtml(g, rel, loose){
   var k = rel && rel.kind, where = rel && rel.where;
   var warn = function(t){ return '<div class="gap clash"><span></span><span>' + t + '</span></div>'; };
   var calm = function(t){ return '<div class="gap"><span></span><span>' + t + '</span></div>'; };
+
+  if (loose && g < 30) {
+    return calm((g === 0 ? 'back to back' : g + ' min') + ' — both drop-in, so either can give' +
+      (where ? ' · ' + esc(where) : ''));
+  }
 
   if (g === 0) {
     return k === "same"
@@ -3029,7 +3036,8 @@ function renderPlan(){
         /* a calendar entry with a Montreal hood carries loc like a listing,
            so the gap to or from it can say where as well as how long */
         var at = function(y){ return y.b || y.r.item; };
-        if (g >= 0 && !odd(prev) && !odd(x)) html += gapHtml(g, travelRel(at(prev), at(x)));
+        var loose = !prev.b && !x.b && isDropIn(prev.r.item) && isDropIn(x.r.item);
+        if (g >= 0 && !odd(prev) && !odd(x)) html += gapHtml(g, travelRel(at(prev), at(x)), loose);
       }
       if (!x.b && x.at != null) lastPick = x;
       if (x.b) { html += busySlotHtml(x.b); return; }
